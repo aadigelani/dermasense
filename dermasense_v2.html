@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DermaSense · Skin Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f1ede7;--bg2:#e9e4dc;--bg3:#dfd9cf;
+  --surface:#faf8f5;--surface2:#f4f1eb;
+  --ink:#18160f;--text:#2e2a22;--text2:#5a5248;--text3:#9a8e82;
+  --primary:#1b3526;--primary2:#2a5038;--primary3:#3d7a56;
+  --sage:#6aac82;--sage-l:rgba(106,172,130,.12);
+  --teal:#4a8896;--teal-l:rgba(74,136,150,.1);
+  --terra:#c07050;--terra-l:rgba(192,112,80,.1);
+  --sky:#5882a8;--sky-l:rgba(88,130,168,.1);
+  --border:rgba(30,20,10,.07);--border2:rgba(30,20,10,.13);
+  --sh1:0 2px 12px rgba(20,14,8,.05);
+  --sh2:0 6px 32px rgba(20,14,8,.09);
+  --sh3:0 16px 60px rgba(20,14,8,.13);
+  --r:8px;--r2:14px;--r3:22px;--r4:32px;
+  --f-serif:'DM Serif Display',serif;
+  --f-ui:'Syne',sans-serif;
+  --f-mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--f-ui);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+canvas{display:block}
+button{cursor:pointer;font-family:inherit;border:none;background:none;outline:none}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+
+/* ── AWAIT ── */
+#await{
+  position:fixed;inset:0;z-index:500;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .9s cubic-bezier(.4,0,.2,1),transform .9s cubic-bezier(.4,0,.2,1);
+}
+#await.out{opacity:0;transform:scale(1.04);pointer-events:none}
+.aw-visual{
+  width:120px;height:120px;position:relative;margin-bottom:2.5rem;
+}
+.aw-orb{
+  width:60px;height:60px;border-radius:50%;
+  background:radial-gradient(circle at 38% 35%,var(--sage),var(--primary));
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:awPulse 3s ease-in-out infinite;
+  box-shadow:0 0 40px rgba(106,172,130,.2);
+}
+.aw-ring{
+  position:absolute;border-radius:50%;border:1px solid rgba(106,172,130,.2);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:awRing 3s ease-out infinite;
+}
+.aw-r1{width:90px;height:90px;animation-delay:.0s}
+.aw-r2{width:115px;height:115px;animation-delay:.7s}
+@keyframes awPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}
+@keyframes awRing{0%{opacity:.5;transform:translate(-50%,-50%) scale(.9)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.3)}}
+.aw-title{font-family:var(--f-serif);font-size:2rem;color:var(--ink);margin-bottom:.35rem;letter-spacing:-.01em}
+.aw-sub{font-family:var(--f-mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);margin-bottom:2.25rem}
+.aw-demos{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center;margin-bottom:1.25rem}
+.aw-btn{
+  font-family:var(--f-mono);font-size:.58rem;letter-spacing:.06em;
+  padding:.32rem .85rem;border-radius:20px;
+  border:1px solid var(--border2);color:var(--text2);background:var(--surface);
+  transition:all .18s ease;
+}
+.aw-btn:hover{background:var(--bg2);border-color:var(--primary);color:var(--primary)}
+.aw-hint{font-family:var(--f-mono);font-size:.56rem;color:var(--text3)}
+
+/* ── PROGRESS ── */
+#prog{
+  position:fixed;top:0;left:0;z-index:600;height:2px;width:0%;
+  background:linear-gradient(90deg,var(--primary),var(--sage),var(--primary));
+  background-size:200%;animation:progShim 1.4s linear infinite;
+  transition:width .35s ease;
+}
+@keyframes progShim{0%{background-position:0%}100%{background-position:200%}}
+
+/* ── APP ── */
+#app{display:none}
+#app.on{display:block}
+
+/* ── NAV ── */
+.nav{
+  position:sticky;top:0;z-index:200;height:52px;
+  background:rgba(241,237,231,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;
+  transition:box-shadow .3s ease;
+}
+.nav.scrolled{box-shadow:var(--sh1)}
+.nav-brand{
+  font-family:var(--f-serif);font-size:1.15rem;color:var(--primary);
+  display:flex;align-items:center;gap:.55rem;letter-spacing:.01em;
+}
+.nav-live{
+  display:flex;align-items:center;gap:.35rem;
+  font-family:var(--f-mono);font-size:.56rem;letter-spacing:.1em;
+  padding:.2rem .6rem;border-radius:12px;
+  background:rgba(106,172,130,.1);color:var(--primary3);
+  border:1px solid rgba(106,172,130,.2);
+}
+.nav-live-dot{width:5px;height:5px;border-radius:50%;background:var(--sage);animation:liveDot 2s ease-in-out infinite}
+@keyframes liveDot{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-center{font-family:var(--f-mono);font-size:.57rem;color:var(--text3);display:flex;gap:.9rem}
+.nav-center em{font-style:normal;color:var(--text2);font-weight:500}
+.nav-right{display:flex;gap:.4rem}
+.nbtn{
+  font-family:var(--f-mono);font-size:.57rem;letter-spacing:.04em;
+  padding:.28rem .72rem;border-radius:var(--r);
+  border:1px solid var(--border2);color:var(--text2);
+  transition:all .18s ease;
+}
+.nbtn:hover{background:var(--bg2);color:var(--text)}
+.nbtn.hi{background:var(--primary);color:rgba(255,255,255,.9);border-color:var(--primary)}
+.nbtn.hi:hover{background:var(--primary2)}
+
+/* ── HERO ── */
+.hero{
+  min-height:calc(100vh - 52px);
+  display:grid;grid-template-columns:1fr 1fr;
+  position:relative;overflow:hidden;
+  background:var(--bg);
+}
+/* ambient background shapes */
+.hero-ambient{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.hero-ambient::before{
+  content:'';position:absolute;
+  width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(106,172,130,.08) 0%,transparent 65%);
+  right:-150px;top:-100px;
+}
+.hero-ambient::after{
+  content:'';position:absolute;
+  width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(74,136,150,.06) 0%,transparent 65%);
+  left:-100px;bottom:-80px;
+}
+
+.hero-l{
+  padding:5rem 3rem 4rem 5rem;
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;z-index:1;
+}
+.hero-r{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;z-index:1;padding:2rem 3rem 2rem 0;
+}
+
+.hero-kicker{
+  font-family:var(--f-mono);font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--primary3);display:flex;align-items:center;gap:.65rem;margin-bottom:1.75rem;
+  opacity:0;animation:fadeUp .6s .2s ease forwards;
+}
+.hero-kicker::before{content:'';width:24px;height:1px;background:var(--sage)}
+
+.hero-decode{
+  font-family:var(--f-mono);font-size:.6rem;letter-spacing:.04em;
+  color:var(--text3);height:1.1em;overflow:hidden;margin-bottom:.6rem;
+  opacity:0;animation:fadeUp .5s .4s ease forwards;
+}
+
+.hero-headline{
+  font-family:var(--f-serif);
+  font-size:clamp(3.4rem,6.5vw,6rem);
+  line-height:.94;color:var(--ink);letter-spacing:-.01em;
+  margin-bottom:1.25rem;
+  opacity:0;animation:fadeUp .9s .5s cubic-bezier(.16,1,.3,1) forwards;
+}
+.hero-headline em{font-style:italic;color:var(--primary)}
+
+.hero-type-block{
+  margin-bottom:1rem;
+  opacity:0;animation:fadeUp .6s 1.2s ease forwards;
+}
+.hero-type-label{
+  font-family:var(--f-mono);font-size:.54rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:.3rem;
+}
+.hero-type{
+  font-family:var(--f-serif);font-size:1.8rem;color:var(--primary);line-height:1.15;
+  display:flex;align-items:center;gap:.85rem;flex-wrap:wrap;
+}
+.hero-status{
+  font-family:var(--f-mono);font-size:.6rem;letter-spacing:.07em;
+  padding:.22rem .75rem;border-radius:20px;
+  background:var(--sage-l);color:var(--primary2);
+  border:1px solid rgba(106,172,130,.25);
+  font-family:var(--f-mono);
+}
+
+.hero-tags{
+  display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1.5rem;
+  opacity:0;animation:fadeUp .6s 1.45s ease forwards;
+}
+.htag{
+  font-family:var(--f-mono);font-size:.54rem;letter-spacing:.06em;
+  padding:.2rem .65rem;border-radius:20px;
+  border:1px solid var(--border2);color:var(--text2);background:var(--surface);
+}
+.htag.lit{background:var(--sage-l);border-color:rgba(106,172,130,.28);color:var(--primary2)}
+
+.hero-insight{
+  font-size:.84rem;line-height:1.78;color:var(--text2);
+  max-width:400px;margin-bottom:1.75rem;
+  padding-left:1rem;border-left:2px solid var(--sage);
+  opacity:0;animation:fadeUp .6s 1.65s ease forwards;
+}
+
+.hero-age{
+  display:flex;align-items:center;gap:.7rem;
+  opacity:0;animation:fadeUp .5s 1.85s ease forwards;
+}
+.age-lbl{font-family:var(--f-mono);font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.age-inp{
+  font-family:var(--f-mono);font-size:.7rem;width:60px;
+  padding:.28rem .55rem;border:1px solid var(--border2);border-radius:var(--r);
+  background:var(--surface);color:var(--text);text-align:center;
+  transition:border-color .18s ease;
+}
+.age-inp:focus{outline:none;border-color:var(--primary)}
+.age-note{font-family:var(--f-mono);font-size:.52rem;color:var(--text3)}
+
+/* ── ORB / CORE ── */
+.orb-scene{
+  position:relative;width:320px;height:320px;
+  opacity:0;animation:fadeIn .9s .7s ease forwards;
+}
+#orbCanvas{
+  border-radius:50%;
+  animation:orbFloat 7s ease-in-out infinite;
+  filter:drop-shadow(0 0 40px rgba(58,115,82,.18)) drop-shadow(0 20px 40px rgba(18,12,8,.12));
+}
+@keyframes orbFloat{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  40%{transform:translateY(-12px) rotate(1.5deg)}
+  70%{transform:translateY(6px) rotate(-.8deg)}
+}
+@keyframes fadeIn{to{opacity:1}}
+
+.orb-ring-el{
+  position:absolute;border-radius:50%;
+  border:1px solid rgba(58,115,82,.08);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:orbRing 5s ease-in-out infinite alternate;
+}
+@keyframes orbRing{0%{opacity:.2;transform:translate(-50%,-50%) scale(1)}100%{opacity:.06;transform:translate(-50%,-50%) scale(1.06)}}
+
+/* satellite cards */
+.sat{
+  position:absolute;
+  background:rgba(250,248,245,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border2);border-radius:var(--r2);
+  padding:.65rem .95rem;min-width:96px;
+  box-shadow:var(--sh2);
+  opacity:0;transform:translateY(8px) scale(.92);
+  transition:opacity .45s ease,transform .45s ease;
+}
+.sat.on{opacity:1;transform:translateY(0) scale(1)}
+.sat:hover{box-shadow:var(--sh3);transform:translateY(-2px) scale(1.03)!important}
+.sat-lbl{font-family:var(--f-mono);font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:.2rem}
+.sat-val{font-family:var(--f-serif);font-size:1.7rem;color:var(--ink);line-height:1}
+.sat-desc{font-size:.58rem;color:var(--text3);margin-top:.15rem}
+.sat-bar{height:2px;border-radius:1px;background:var(--bg3);margin-top:.4rem;overflow:hidden}
+.sat-fill{height:100%;border-radius:1px;transition:width 1.5s cubic-bezier(.4,0,.2,1) .4s}
+.s-o{top:-2%;left:-24%}
+.s-ph{top:-2%;right:-24%}
+.s-h{bottom:-2%;left:50%;transform:translateX(-50%) translateY(8px) scale(.92)}
+.s-h.on{transform:translateX(-50%) translateY(0) scale(1)}
+.s-h:hover{transform:translateX(-50%) translateY(-2px) scale(1.03)!important}
+
+/* ── DARK RIBBON ── */
+.ribbon{
+  background:var(--primary);display:grid;grid-template-columns:repeat(4,1fr);
+}
+.rib-c{
+  padding:1.5rem 2rem;border-right:1px solid rgba(255,255,255,.06);
+}
+.rib-c:last-child{border-right:none}
+.rib-lbl{font-family:var(--f-mono);font-size:.52rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:.5rem}
+.rib-val{font-family:var(--f-serif);font-size:2.2rem;color:#fff;line-height:1;margin-bottom:.3rem}
+.rib-unit{font-family:var(--f-mono);font-size:.5rem;color:rgba(255,255,255,.22);margin-left:.15rem}
+.rib-track{height:2px;background:rgba(255,255,255,.07);border-radius:1px;margin-bottom:.3rem;overflow:hidden}
+.rib-fill{height:100%;border-radius:1px;transition:width 1.7s cubic-bezier(.4,0,.2,1) .3s}
+.rib-st{font-family:var(--f-mono);font-size:.6rem}
+
+/* ── GRAPH SECTION ── */
+.graph-sec{
+  padding:4.5rem 5rem;background:var(--surface);
+  display:grid;grid-template-columns:1fr 320px;gap:4rem;align-items:start;
+}
+.graph-left{}
+.graph-kicker{font-family:var(--f-mono);font-size:.54rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:.55rem;margin-bottom:1.25rem}
+.graph-kicker::before{content:'';width:14px;height:1px;background:var(--text3)}
+.graph-title{font-family:var(--f-serif);font-size:2.2rem;color:var(--ink);line-height:1.1;margin-bottom:.6rem}
+.graph-sub{font-size:.78rem;color:var(--text2);line-height:1.65;max-width:340px;margin-bottom:1.75rem}
+.graph-wrap{
+  position:relative;border-radius:var(--r2);overflow:hidden;
+  background:var(--bg);border:1px solid var(--border);
+}
+#graphCanvas{display:block;width:100%}
+.graph-legend{display:flex;gap:1.25rem;margin-top:.85rem}
+.gl-item{display:flex;align-items:center;gap:.4rem;font-family:var(--f-mono);font-size:.56rem;color:var(--text2)}
+.gl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.graph-right{}
+.graph-stats{display:flex;flex-direction:column;gap:.65rem}
+.gstat{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);
+  padding:1.1rem 1.4rem;transition:transform .2s ease,box-shadow .2s ease;cursor:default;
+}
+.gstat:hover{transform:translateX(3px);box-shadow:var(--sh2)}
+.gstat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+.gstat-lbl{font-family:var(--f-mono);font-size:.53rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.gstat-val{font-family:var(--f-serif);font-size:1.5rem;color:var(--ink);line-height:1}
+.gstat-track{height:3px;background:var(--bg3);border-radius:1.5px;overflow:hidden;margin-bottom:.3rem}
+.gstat-fill{height:100%;border-radius:1.5px;transition:width 1.5s cubic-bezier(.4,0,.2,1) .5s;position:relative}
+.gstat-fill::after{
+  content:'';position:absolute;right:0;top:-2px;
+  width:7px;height:7px;border-radius:50%;background:inherit;
+}
+.gstat-note{font-size:.64rem;color:var(--text3)}
+.gstat-zone{
+  font-family:var(--f-mono);font-size:.5rem;letter-spacing:.06em;
+  padding:.16rem .5rem;border-radius:8px;
+}
+.z-good{background:rgba(106,172,130,.1);color:var(--primary3)}
+.z-warn{background:rgba(192,112,80,.1);color:#904030}
+.z-ok{background:rgba(74,136,150,.1);color:#305868}
+
+/* ── SECTIONS ── */
+.sec{padding:5rem 5rem}
+.sec-alt{background:var(--surface)}
+.skicker{font-family:var(--f-mono);font-size:.54rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:.55rem;margin-bottom:1.25rem}
+.skicker::before{content:'';width:14px;height:1px;background:var(--text3)}
+.stitle{font-family:var(--f-serif);font-size:clamp(2rem,3.2vw,2.8rem);color:var(--ink);line-height:1.1;letter-spacing:-.01em;margin-bottom:2.5rem;max-width:500px}
+.stitle em{font-style:italic;color:var(--primary)}
+
+/* ── INSIGHT CARDS ── */
+.igrid{display:grid;grid-template-columns:1.4fr 1fr;gap:.9rem;margin-bottom:.9rem}
+.igrid2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.icard{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r2);padding:1.6rem 1.85rem;position:relative;overflow:hidden;
+  opacity:0;transform:translateY(10px);
+  transition:opacity .55s ease,transform .55s ease,box-shadow .2s ease;
+}
+.icard:hover{box-shadow:var(--sh2)}
+.icard.vis{opacity:1;transform:translateY(0)}
+.icard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--r2) var(--r2) 0 0}
+.icard.g::before{background:linear-gradient(90deg,var(--primary),var(--sage))}
+.icard.a::before{background:linear-gradient(90deg,var(--terra),#e0a070)}
+.icard.r::before{background:linear-gradient(90deg,#a03838,#c06058)}
+.icard.b::before{background:linear-gradient(90deg,var(--sky),#80aad0)}
+.itag{display:inline-block;font-family:var(--f-mono);font-size:.53rem;letter-spacing:.1em;text-transform:uppercase;padding:.16rem .55rem;border-radius:9px;margin-bottom:.7rem}
+.icard.g .itag{background:var(--sage-l);color:var(--primary2)}
+.icard.a .itag{background:var(--terra-l);color:#8a3820}
+.icard.r .itag{background:rgba(160,56,56,.08);color:#882828}
+.icard.b .itag{background:var(--sky-l);color:#204868}
+.icause{font-family:var(--f-mono);font-size:.53rem;letter-spacing:.04em;color:var(--text3);margin-bottom:.18rem}
+.ititle{font-family:var(--f-serif);font-size:1.18rem;color:var(--ink);margin-bottom:.45rem;line-height:1.25}
+.ibody{font-size:.76rem;line-height:1.76;color:var(--text2)}
+.ibody strong{color:var(--text);font-weight:600}
+.iaction{margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);font-size:.7rem;color:var(--text3);line-height:1.58}
+.iaction strong{color:var(--primary);font-weight:600}
+
+/* ── RISK ── */
+.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:2.25rem}
+.rcell{background:var(--surface);padding:1rem 1.2rem;transition:background .18s ease}
+.rcell:hover{background:var(--bg)}
+.rlbl{font-family:var(--f-mono);font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.35rem}
+.rlevel{font-size:.68rem;font-weight:600;display:flex;align-items:center;gap:.32rem}
+.rdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.rlow{color:#2a6830}.rlow .rdot{background:#2a6830}
+.rmod{color:#8a4a10}.rmod .rdot{background:#c07020}
+.relv{color:#882828}.relv .rdot{background:#aa3838}
+.rnote{font-size:.6rem;color:var(--text3);margin-top:.22rem;line-height:1.5}
+
+/* ── BARRIER ── */
+.bblock{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);
+  padding:2.25rem 2.75rem;margin-top:2rem;
+  display:grid;grid-template-columns:1fr auto;gap:3rem;align-items:center;
+  transition:box-shadow .2s ease;
+}
+.bblock:hover{box-shadow:var(--sh2)}
+.blbl{font-family:var(--f-mono);font-size:.52rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);margin-bottom:.55rem}
+.bphase{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--f-mono);font-size:.55rem;letter-spacing:.08em;padding:.22rem .7rem;border-radius:20px;background:var(--sage-l);color:var(--primary2);border:1px solid rgba(106,172,130,.22);margin-bottom:.7rem}
+.bstatus{font-family:var(--f-serif);font-size:1.9rem;color:var(--ink);line-height:1.15;margin-bottom:.55rem}
+.bdesc{font-size:.76rem;line-height:1.72;color:var(--text2);max-width:440px}
+.bgauge{width:120px;height:120px;position:relative;flex-shrink:0}
+.bgauge svg{transform:rotate(-90deg)}
+.gc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.gpct{font-family:var(--f-serif);font-size:1.55rem;color:var(--ink);line-height:1}
+.glbl{font-family:var(--f-mono);font-size:.5rem;letter-spacing:.1em;color:var(--text3);margin-top:.12rem}
+
+/* ── STAB ROW ── */
+.stabrow{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-top:1.5rem}
+.scell{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem}
+.slbl{font-family:var(--f-mono);font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.35rem}
+.strack{height:3px;background:var(--bg3);border-radius:1.5px;margin-bottom:.35rem;overflow:hidden}
+.sfill{height:100%;border-radius:1.5px;transition:width 1.5s cubic-bezier(.4,0,.2,1) .2s}
+.sval{font-family:var(--f-serif);font-size:1.3rem;color:var(--ink)}
+.snote{font-size:.62rem;color:var(--text3);margin-top:.12rem}
+
+/* ── PHASES ── */
+.pstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-bottom:2.5rem}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;position:relative;overflow:hidden;transition:all .2s ease}
+.pcard.curr{border-color:rgba(58,115,82,.3);background:rgba(58,115,82,.03)}
+.pcard.fut{opacity:.45}
+.pnum{font-family:var(--f-mono);font-size:.52rem;letter-spacing:.1em;color:var(--text3);margin-bottom:.28rem}
+.pname{font-family:var(--f-serif);font-size:1.05rem;color:var(--ink);margin-bottom:.2rem}
+.pwks{font-family:var(--f-mono);font-size:.54rem;color:var(--text3);margin-bottom:.38rem}
+.pdesc{font-size:.68rem;line-height:1.6;color:var(--text2)}
+.pcurr{position:absolute;top:.6rem;right:.6rem;font-family:var(--f-mono);font-size:.5rem;letter-spacing:.07em;background:var(--sage-l);color:var(--primary2);padding:.16rem .52rem;border-radius:8px;border:1px solid rgba(106,172,130,.2)}
+
+/* ── BUDGET ── */
+.bctl{
+  display:flex;align-items:center;gap:1.25rem;margin-bottom:2rem;
+  padding:.9rem 1.4rem;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r4);width:fit-content;
+}
+.bctl-lbl{font-family:var(--f-mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.bwrap{display:flex;flex-direction:column;gap:.2rem}
+.btrack{position:relative;width:200px;height:3px;background:var(--bg3);border-radius:1.5px;cursor:pointer}
+.bfill{position:absolute;top:0;left:0;height:100%;border-radius:1.5px;background:var(--primary);transition:width .3s ease}
+.bthumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:var(--surface);border:2px solid var(--primary);box-shadow:var(--sh1);transition:left .3s ease}
+.bstops{display:flex;justify-content:space-between;width:200px}
+.bstop{font-family:var(--f-mono);font-size:.53rem;letter-spacing:.04em;color:var(--text3);cursor:pointer;padding:.12rem;transition:color .18s}
+.bstop.act{color:var(--primary);font-weight:500}
+.bval{font-family:var(--f-mono);font-size:.63rem;color:var(--text);min-width:65px;font-weight:500}
+
+/* ── ROUTINE ── */
+.rgrid2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-bottom:.9rem}
+.rblock{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.rhead{padding:.9rem 1.4rem;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.55rem}
+.tdot{width:6px;height:6px;border-radius:50%}
+.tdot.am{background:#c07838}.tdot.pm{background:#5870a8}
+.rhead-lbl{font-family:var(--f-mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.slist{padding:.55rem}
+.step{border-radius:var(--r);margin-bottom:.32rem;border:1px solid transparent;overflow:hidden;transition:background .18s ease,border-color .18s ease}
+.step:hover{background:var(--bg)}
+.step.open{background:var(--bg);border-color:var(--border2)}
+.shead{display:grid;grid-template-columns:18px 1fr auto auto auto;align-items:center;gap:.5rem;padding:.7rem .8rem;cursor:pointer}
+.snum{width:17px;height:17px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:.5rem;color:var(--text3)}
+.sname{font-size:.74rem;font-weight:600;color:var(--ink)}
+.sprod{font-family:var(--f-mono);font-size:.56rem;color:var(--primary3)}
+.stier{font-family:var(--f-mono);font-size:.5rem;padding:.13rem .42rem;border-radius:7px;white-space:nowrap}
+.t-b{background:var(--sage-l);color:var(--primary2)}
+.t-m{background:var(--terra-l);color:#7a3810}
+.t-p{background:var(--sky-l);color:#1e4060}
+.schev{font-size:.5rem;color:var(--text3);transition:transform .22s ease}
+.step.open .schev{transform:rotate(180deg)}
+.sbody{display:none;padding:.1rem .8rem .9rem 2.2rem;border-top:1px solid var(--border)}
+.step.open .sbody{display:block}
+.sdt{font-family:var(--f-mono);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.14rem;padding-top:.58rem}
+.sdd{font-size:.7rem;line-height:1.64;color:var(--text2)}
+.sdd.av{color:#882828;font-size:.68rem}
+.chips{display:flex;flex-wrap:wrap;gap:.22rem;margin-top:.18rem}
+.chip{font-family:var(--f-mono);font-size:.5rem;padding:.13rem .42rem;background:var(--bg2);color:var(--text2);border-radius:7px}
+.alts-wrap{margin-top:.4rem;padding-top:.4rem;border-top:1px solid rgba(30,20,10,.05)}
+.alts-lbl{font-family:var(--f-mono);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.3rem}
+.alt-r{display:flex;align-items:center;justify-content:space-between;padding:.28rem .48rem;border-radius:var(--r);background:var(--bg);margin-bottom:.18rem;font-size:.68rem;color:var(--text);border:1px solid transparent;transition:border-color .15s;cursor:pointer}
+.alt-r:hover{border-color:var(--border2)}
+.alt-t{font-family:var(--f-mono);font-size:.54rem;color:var(--text3)}
+.cnote{margin-top:.35rem;padding:.38rem .6rem;background:rgba(160,56,56,.05);border:1px solid rgba(160,56,56,.12);border-radius:var(--r);font-size:.66rem;color:#882828;line-height:1.5}
+
+/* ── WEEKLY ── */
+.wblock{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.6rem 1.85rem;margin-top:.75rem;display:none}
+.whead{font-family:var(--f-mono);font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:.9rem}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.65rem}
+.witem{padding:.9rem 1.05rem;background:var(--bg);border-radius:var(--r);border:1px solid var(--border);transition:box-shadow .18s ease}
+.witem:hover{box-shadow:var(--sh1)}
+.wname{font-size:.74rem;font-weight:600;color:var(--ink);margin-bottom:.18rem}
+.wwhen{font-family:var(--f-mono);font-size:.52rem;color:var(--primary3);margin-bottom:.22rem}
+.wdesc{font-size:.66rem;line-height:1.58;color:var(--text2)}
+
+/* ── CONFLICT ── */
+.cpanel{background:rgba(160,56,56,.04);border:1px solid rgba(160,56,56,.14);border-radius:var(--r);padding:.9rem 1.2rem;margin-bottom:1.25rem;display:none}
+.cpanel.on{display:block}
+.chead{font-family:var(--f-mono);font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:#882828;margin-bottom:.55rem}
+.citem{font-size:.72rem;color:var(--text2);line-height:1.58;padding-left:.6rem;border-left:2px solid rgba(160,56,56,.22);margin-bottom:.3rem}
+
+/* ── RAW ── */
+.rawpanel{background:var(--primary);border-radius:var(--r);padding:1.1rem 1.6rem;font-family:var(--f-mono);font-size:.64rem;color:rgba(255,255,255,.5);line-height:1.88;margin-top:.9rem;display:none}
+.rawpanel.on{display:block}
+.rk{color:rgba(106,172,130,.65)}.rv{color:rgba(255,255,255,.88)}
+
+/* ── SUMMARY ── */
+.summ{background:var(--primary);padding:5rem 5rem;position:relative;overflow:hidden}
+.summ::before{content:'';position:absolute;top:-20%;right:0;width:550px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(106,172,130,.06),transparent 65%);pointer-events:none}
+.sum-kicker{font-family:var(--f-mono);font-size:.53rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.25);display:flex;align-items:center;gap:.55rem;margin-bottom:1.75rem}
+.sum-kicker::before{content:'';width:14px;height:1px;background:rgba(255,255,255,.2)}
+.sum-title{font-family:var(--f-serif);font-size:clamp(2.2rem,4.5vw,3.8rem);color:#fff;line-height:1.1;letter-spacing:-.01em;max-width:680px;margin-bottom:3rem}
+.sum-title em{font-style:italic;color:var(--sage)}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr)}
+.sg-cell{padding:1.75rem 1.75rem 1.75rem 0;border-top:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.05)}
+.sg-cell:nth-child(3n){border-right:none}
+.sg-cell:nth-child(n+4){padding-top:1.75rem}
+.sg-lbl{font-family:var(--f-mono);font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.24);margin-bottom:.38rem}
+.sg-val{font-family:var(--f-serif);font-size:1.35rem;color:#fff;line-height:1.2;margin-bottom:.35rem}
+.sg-note{font-size:.66rem;color:rgba(255,255,255,.32);line-height:1.55}
+
+/* ── FOOT ── */
+.foot{background:var(--primary);border-top:1px solid rgba(255,255,255,.06);padding:1rem 5rem;display:flex;align-items:center;justify-content:space-between}
+.foot-brand{font-family:var(--f-mono);font-size:.55rem;letter-spacing:.12em;color:rgba(255,255,255,.18)}
+.foot-note{font-size:.54rem;color:rgba(255,255,255,.14);font-family:var(--f-mono)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(18px);background:var(--primary);color:rgba(255,255,255,.9);font-family:var(--f-mono);font-size:.6rem;letter-spacing:.04em;padding:.55rem 1.35rem;border-radius:20px;z-index:800;opacity:0;pointer-events:none;transition:opacity .28s ease,transform .28s ease;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── SIGNAL / PROCESS VIEW ── */
+#signal{
+  position:fixed;inset:0;z-index:700;
+  background:#0c1610;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .55s ease;
+}
+#signal.on{display:flex}
+#signal.vis{opacity:1}
+.sig-close{
+  position:absolute;top:1.75rem;right:2.25rem;
+  font-family:var(--f-mono);font-size:.56rem;letter-spacing:.08em;
+  color:rgba(255,255,255,.28);padding:.32rem .75rem;border-radius:20px;
+  border:1px solid rgba(255,255,255,.1);transition:all .18s ease;
+}
+.sig-close:hover{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.28)}
+.sig-inner{display:flex;flex-direction:column;align-items:center;gap:2.5rem}
+#sigCanvas{display:block}
+.sig-bottom{display:flex;flex-direction:column;align-items:center;gap:.9rem}
+.sig-log{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;
+  color:rgba(180,220,195,.7);min-height:1.2em;text-align:center;
+  opacity:0;transition:opacity .35s ease;
+}
+.sig-log.on{opacity:1}
+.sig-actions{display:flex;gap:.65rem}
+.sig-act{
+  font-family:var(--f-mono);font-size:.58rem;letter-spacing:.07em;
+  padding:.4rem 1rem;border-radius:20px;
+  border:1px solid rgba(180,220,195,.22);color:rgba(180,220,195,.7);
+  background:transparent;transition:all .18s ease;
+}
+.sig-act:hover{background:rgba(180,220,195,.07);border-color:rgba(180,220,195,.5);color:rgba(180,220,195,.95)}
+
+/* ── ANIM UTILS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.rev{opacity:0;transform:translateY(10px);transition:opacity .6s ease,transform .6s ease}
+.rev.vis{opacity:1;transform:translateY(0)}
+
+/* ── MOBILE ── */
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr}
+  .hero-r{display:none}
+  .hero-l{padding:3.5rem 1.75rem 2.5rem}
+  .ribbon{grid-template-columns:repeat(2,1fr)}
+  .rib-c:nth-child(2){border-right:none}
+  .rib-c:nth-child(3){border-top:1px solid rgba(255,255,255,.06)}
+  .graph-sec{grid-template-columns:1fr;padding:3rem 1.75rem}
+  .sec{padding:3.5rem 1.75rem}
+  .igrid,.igrid2,.rgrid2,.sgrid{grid-template-columns:1fr}
+  .rgrid,.stabrow,.pstrip{grid-template-columns:repeat(2,1fr)}
+  .bblock{grid-template-columns:1fr;gap:1.75rem}
+  .bgauge{margin:0 auto}
+  .bctl{flex-direction:column;align-items:flex-start;width:100%;border-radius:var(--r2)}
+  .btrack,.bstops{width:100%;max-width:280px}
+  .summ{padding:3.5rem 1.75rem}
+  .sgrid{grid-template-columns:1fr}
+  .sg-cell{border-right:none;padding:1.25rem 0}
+  .foot{padding:.9rem 1.75rem;flex-direction:column;gap:.3rem;align-items:flex-start}
+  .nav{padding:0 1.25rem}
+  .nav-center,.nav-right .nbtn:not(.hi){display:none}
+}
+@media(max-width:520px){
+  .rgrid,.stabrow,.pstrip{grid-template-columns:1fr}
+  .hero-headline{font-size:3rem}
+  .aw-title{font-size:1.7rem}
+}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+
+<!-- AWAIT -->
+<div id="await">
+  <div class="aw-visual">
+    <div class="aw-ring aw-r1"></div>
+    <div class="aw-ring aw-r2"></div>
+    <div class="aw-orb"></div>
+  </div>
+  <div class="aw-title">DermaSense</div>
+  <div class="aw-sub">Awaiting NFC Scan</div>
+  <div class="aw-demos">
+    <button class="aw-btn" onclick="demoLoad('oily')">Oily skin</button>
+    <button class="aw-btn" onclick="demoLoad('dry')">Dry skin</button>
+    <button class="aw-btn" onclick="demoLoad('balanced')">Balanced</button>
+    <button class="aw-btn" onclick="demoLoad('stressed')">Stressed</button>
+  </div>
+  <div class="aw-hint">or append ?o=3.2&ph=5.1&h=2.4 to URL</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="nav" id="nav">
+    <div class="nav-brand">DermaSense
+      <div class="nav-live"><div class="nav-live-dot"></div>live</div>
+    </div>
+    <div class="nav-center" id="navCenter"></div>
+    <div class="nav-right">
+      <button class="nbtn hi" onclick="openSignal()">Analysis process</button>
+      <button class="nbtn" onclick="toggleRaw()">Raw data</button>
+      <button class="nbtn" onclick="shareResult()">Share ↗</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-ambient"></div>
+    <div class="hero-l">
+      <div class="hero-kicker">Biosensor · <span id="hTime"></span></div>
+      <div class="hero-decode" id="hDecode">&nbsp;</div>
+      <h1 class="hero-headline" id="hHeadline">Skin<br><em>Analysis</em></h1>
+      <div class="hero-type-block">
+        <div class="hero-type-label">Classification</div>
+        <div class="hero-type">
+          <span id="hType">—</span>
+          <span class="hero-status" id="hStatus">—</span>
+        </div>
+      </div>
+      <div class="hero-tags" id="hTags"></div>
+      <div class="hero-insight" id="hInsight">—</div>
+      <div class="hero-age">
+        <div class="age-lbl">Age</div>
+        <input class="age-inp" type="number" id="ageInp" min="12" max="85" value="28" oninput="onAge()">
+        <div class="age-note">adjusts baseline</div>
+      </div>
+    </div>
+    <div class="hero-r">
+      <div class="orb-scene" id="orbScene">
+        <div class="orb-ring-el" style="width:370px;height:370px"></div>
+        <div class="orb-ring-el" style="width:430px;height:430px;animation-delay:1.2s"></div>
+        <canvas id="orbCanvas" width="320" height="320"></canvas>
+        <div class="sat s-o" id="sO">
+          <div class="sat-lbl">Sebum</div>
+          <div class="sat-val" id="sOv">—</div>
+          <div class="sat-desc" id="sOd">—</div>
+          <div class="sat-bar"><div class="sat-fill" id="sOb"></div></div>
+        </div>
+        <div class="sat s-ph" id="sPh">
+          <div class="sat-lbl">pH</div>
+          <div class="sat-val" id="sPhv">—</div>
+          <div class="sat-desc" id="sPhd">—</div>
+          <div class="sat-bar"><div class="sat-fill" id="sPhb"></div></div>
+        </div>
+        <div class="sat s-h" id="sH">
+          <div class="sat-lbl">Hydration</div>
+          <div class="sat-val" id="sHv">—</div>
+          <div class="sat-desc" id="sHd">—</div>
+          <div class="sat-bar"><div class="sat-fill" id="sHb"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIBBON -->
+  <div class="ribbon">
+    <div class="rib-c"><div class="rib-lbl">Sebum</div><div class="rib-val" id="rO">—<span class="rib-unit">/5</span></div><div class="rib-track"><div class="rib-fill" id="rOb"></div></div><div class="rib-st" id="rOs"></div></div>
+    <div class="rib-c"><div class="rib-lbl">pH</div><div class="rib-val" id="rPh">—<span class="rib-unit">pH</span></div><div class="rib-track"><div class="rib-fill" id="rPhb"></div></div><div class="rib-st" id="rPhs"></div></div>
+    <div class="rib-c"><div class="rib-lbl">Hydration</div><div class="rib-val" id="rH">—<span class="rib-unit">/5</span></div><div class="rib-track"><div class="rib-fill" id="rHb"></div></div><div class="rib-st" id="rHs"></div></div>
+    <div class="rib-c"><div class="rib-lbl">Barrier</div><div class="rib-val" id="rBi">—<span class="rib-unit">%</span></div><div class="rib-track"><div class="rib-fill" id="rBib" style="background:linear-gradient(90deg,#b07020,#3d7a56)"></div></div><div class="rib-st" id="rBis"></div></div>
+  </div>
+
+  <!-- GRAPH -->
+  <div class="graph-sec">
+    <div class="graph-left">
+      <div class="graph-kicker">Parameter profile</div>
+      <h2 class="graph-title">Sensor readings<br>vs. optimal range</h2>
+      <p class="graph-sub">Each value plotted against the healthy skin range. Deviation from optimal drives the analysis and routine logic.</p>
+      <div class="graph-wrap"><canvas id="graphCanvas" width="700" height="240"></canvas></div>
+      <div class="graph-legend">
+        <div class="gl-item"><div class="gl-dot" style="background:var(--sage)"></div>Sebum</div>
+        <div class="gl-item"><div class="gl-dot" style="background:var(--sky)"></div>pH (normalized)</div>
+        <div class="gl-item"><div class="gl-dot" style="background:var(--terra)"></div>Hydration</div>
+        <div class="gl-item"><div class="gl-dot" style="background:rgba(100,100,100,.3);border:1px dashed rgba(100,100,100,.4)"></div>Optimal zone</div>
+      </div>
+    </div>
+    <div class="graph-right">
+      <div class="graph-stats" id="graphStats"></div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <section class="sec sec-alt">
+    <div class="skicker">Physiological analysis</div>
+    <h2 class="stitle">What your skin<br>is <em>signalling</em></h2>
+    <div class="igrid">
+      <div class="icard" id="iO"><span class="itag">Sebum</span><div class="icause" id="icO"></div><h3 class="ititle" id="itO"></h3><p class="ibody" id="ibO"></p><div class="iaction" id="iaO"></div></div>
+      <div class="icard" id="iPh"><span class="itag">Acid mantle</span><div class="icause" id="icPh"></div><h3 class="ititle" id="itPh"></h3><p class="ibody" id="ibPh"></p><div class="iaction" id="iaPh"></div></div>
+    </div>
+    <div class="igrid2" style="margin-top:.9rem">
+      <div class="icard" id="iH"><span class="itag">Hydration</span><div class="icause" id="icH"></div><h3 class="ititle" id="itH"></h3><p class="ibody" id="ibH"></p><div class="iaction" id="iaH"></div></div>
+      <div class="icard" id="iC"><span class="itag">Synthesis</span><div class="icause" id="icC"></div><h3 class="ititle" id="itC"></h3><p class="ibody" id="ibC"></p><div class="iaction" id="iaC"></div></div>
+    </div>
+    <div class="rgrid" id="rGrid"></div>
+    <div class="bblock rev" id="bBlock">
+      <div>
+        <div class="blbl">Barrier assessment</div>
+        <div class="bphase" id="bPhase">—</div>
+        <div class="bstatus" id="bStatus">—</div>
+        <p class="bdesc" id="bDesc">—</p>
+      </div>
+      <div class="bgauge">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(30,20,10,.08)" stroke-width="7"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke-width="7" stroke-linecap="round"
+            id="gArc" stroke-dasharray="314" stroke-dashoffset="314"
+            style="transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1) .5s"/>
+        </svg>
+        <div class="gc"><div class="gpct" id="gPct">—</div><div class="glbl">integrity</div></div>
+      </div>
+    </div>
+    <div class="stabrow" id="stabRow"></div>
+  </section>
+
+  <!-- ROUTINE -->
+  <section class="sec">
+    <div class="skicker">Skincare protocol</div>
+    <h2 class="stitle">Personalised <em>routine</em></h2>
+    <div class="pstrip" id="pStrip"></div>
+    <div class="bctl">
+      <div class="bctl-lbl">Depth</div>
+      <div class="bwrap">
+        <div class="btrack" id="bTrack" onclick="budgetClick(event)">
+          <div class="bfill" id="bFill" style="width:0%"></div>
+          <div class="bthumb" id="bThumb" style="left:0%"></div>
+        </div>
+        <div class="bstops">
+          <span class="bstop act" onclick="setBudget(0)">Minimal</span>
+          <span class="bstop" onclick="setBudget(1)">Standard</span>
+          <span class="bstop" onclick="setBudget(2)">Advanced</span>
+        </div>
+      </div>
+      <div class="bval" id="bVal">Minimal</div>
+    </div>
+    <div class="cpanel" id="cPanel"><div class="chead">⚠ Conflicts detected</div><div id="cList"></div></div>
+    <div class="rgrid2">
+      <div class="rblock"><div class="rhead"><div class="tdot am"></div><span class="rhead-lbl">Morning</span></div><div class="slist" id="amSteps"></div></div>
+      <div class="rblock"><div class="rhead"><div class="tdot pm"></div><span class="rhead-lbl">Evening</span></div><div class="slist" id="pmSteps"></div></div>
+    </div>
+    <div class="wblock" id="wBlock"><div class="whead">Weekly actives</div><div class="wgrid" id="wItems"></div></div>
+    <div class="rawpanel" id="rawPanel"></div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section class="summ rev">
+    <div class="sum-kicker">Summary</div>
+    <h2 class="sum-title" id="sumTitle">—</h2>
+    <div class="sgrid" id="sumGrid"></div>
+  </section>
+  <div class="foot">
+    <div class="foot-brand">DERMASENSE · NFC BIOSENSOR SYSTEM</div>
+    <div class="foot-note">INFORMATIONAL ONLY · NOT MEDICAL ADVICE</div>
+  </div>
+</div>
+
+<!-- SIGNAL / PROCESS VIEW -->
+<div id="signal">
+  <button class="sig-close" onclick="closeSignal()">✕ close</button>
+  <div class="sig-inner">
+    <canvas id="sigCanvas" width="480" height="480"></canvas>
+    <div class="sig-bottom">
+      <div class="sig-log on" id="sigLog"></div>
+      <div class="sig-actions">
+        <button class="sig-act" onclick="replaySignal()">↺ Replay</button>
+        <button class="sig-act" onclick="toggleSigLabels()">Labels</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── URL PARSER ─────────────────────────────────────────────────────────
+function parseURL(){
+  const sp=new URLSearchParams(window.location.search);
+  const hp=new URLSearchParams(window.location.hash.replace(/^#\??/,''));
+  function g(k){
+    for(const kk of[k,k.toLowerCase(),k.toUpperCase()]){
+      if(sp.has(kk))return sp.get(kk);
+      if(hp.has(kk))return hp.get(kk);
+    }
+    return null;
+  }
+  let o=g('o')??g('oil')??g('sebum');
+  let ph=g('ph')??g('pH')??g('acid');
+  let h=g('h')??g('hyd')??g('hydration')??g('water');
+  if(o===null||ph===null||h===null){
+    const segs=location.pathname.replace(/^\/+/,'').split('/').filter(Boolean);
+    const nums=segs.map(s=>parseFloat(s.replace(/[a-z]+/gi,''))).filter(n=>!isNaN(n));
+    if(nums.length>=3&&o===null&&ph===null&&h===null)[o,ph,h]=nums.map(String);
+  }
+  if(o===null||ph===null||h===null)return null;
+  const ov=parseFloat(o),phv=parseFloat(ph),hv=parseFloat(h);
+  if(isNaN(ov)||isNaN(phv)||isNaN(hv))return null;
+  return{o:Math.min(5,Math.max(0,ov)),ph:Math.min(7.5,Math.max(3,phv)),h:Math.min(5,Math.max(0,hv))};
+}
+
+function demoLoad(t){
+  const d={oily:{o:4.2,ph:5.8,h:1.8},dry:{o:0.8,ph:5.1,h:1.2},balanced:{o:2.8,ph:5.0,h:3.2},stressed:{o:3.6,ph:6.8,h:1.5}};
+  if(d[t])boot(d[t]);
+}
+
+// ── ANALYSIS ENGINE ────────────────────────────────────────────────────
+function aOil(o,age){
+  const adj=age>45?-.4:age>35?-.2:0;
+  const e=Math.min(5,Math.max(0,o-adj));
+  if(e<=1.0)return{lv:'Very Low',st:'Lipid-deficient',col:'b',sh:'Dry-lean',bar:o/5};
+  if(e<=2.5)return{lv:'Low–Moderate',st:'Slightly lean',col:'b',sh:'Lean',bar:o/5};
+  if(e<=3.5)return{lv:'Balanced',st:'Optimal',col:'g',sh:'Balanced',bar:o/5};
+  return{lv:'Elevated',st:'Congestion risk',col:'a',sh:'Oily',bar:o/5};
+}
+function aPh(ph){
+  if(ph<4.5)return{lv:'Overly Acidic',st:'Irritation risk',col:'a',sh:'Below range',bar:(ph-3)/4.5};
+  if(ph<=5.5)return{lv:'Optimal',st:'Barrier healthy',col:'g',sh:'Optimal',bar:(ph-3)/4.5};
+  if(ph<=6.5)return{lv:'Slightly Alkaline',st:'Shifted',col:'a',sh:'Slightly high',bar:(ph-3)/4.5};
+  return{lv:'Alkaline',st:'Barrier disrupted',col:'r',sh:'Alkaline',bar:(ph-3)/4.5};
+}
+function aHyd(h,age){
+  const adj=age>45?-.5:age>35?-.25:0;
+  const e=Math.min(5,Math.max(0,h+adj));
+  if(e<=1.0)return{lv:'Critical',st:'Water-deficient',col:'r',sh:'Critical',bar:h/5};
+  if(e<=2.5)return{lv:'Low',st:'Sub-optimal',col:'a',sh:'Low',bar:h/5};
+  if(e<=3.5)return{lv:'Adequate',st:'Normal range',col:'g',sh:'Good',bar:h/5};
+  return{lv:'Well-hydrated',st:'Strong retention',col:'g',sh:'Excellent',bar:h/5};
+}
+function sType(o,ph,h){
+  if(o<=1.5&&h<=2.0)return'Dry';
+  if(o>=3.6&&h>=2.6)return'Oily';
+  if(o>=3.6&&h<=2.5)return'Dehydrated Oily';
+  if(o>=2.6&&o<=3.5&&h>=2.6&&ph>=4.5&&ph<=5.5)return'Balanced';
+  if(o>=2.6&&h<=2.5)return'Combination';
+  return'Normal–Dry';
+}
+function sConds(o,ph,h){
+  const c=[];
+  if(h<=2.5)c.push('Dehydrated');
+  if(o>=3.6)c.push('Acne-prone');
+  if(ph>6.5||ph<4.0)c.push('Barrier-damaged');
+  if(ph<4.5||(h<=1.5&&ph>5.8))c.push('Sensitive');
+  if(o>=3.6&&ph>=5.6)c.push('Congested');
+  if(!c.length)c.push('Well-balanced');
+  return c;
+}
+function bScore(o,ph,h){
+  let s=100;
+  if(ph<4.5)s-=28;else if(ph>5.5&&ph<=6.5)s-=15;else if(ph>6.5)s-=38;
+  if(o<=1.0)s-=22;else if(o<=1.5)s-=12;else if(o>=4.5)s-=10;
+  if(h<=1.0)s-=22;else if(h<=2.0)s-=12;
+  if(o<=1.5&&h<=1.5)s-=10;
+  if(ph>6.5&&h<=2.0)s-=8;
+  return Math.max(8,Math.min(100,Math.round(s)));
+}
+function stabIdx(o,ph,h){
+  const pd=Math.abs(ph-5.0)/2.5*100;
+  const od=Math.abs(o-2.5)/2.5*100;
+  const hd=Math.max(0,(3.0-h)/3.0*100);
+  return Math.max(5,Math.min(100,Math.round(100-(pd*.4+od*.3+hd*.3))));
+}
+function phase(b){
+  if(b<50)return{n:1,nm:'Barrier Repair',wk:'Weeks 1–6',d:'Ceramides, glycerin, panthenol only. No actives.'};
+  if(b<75)return{n:2,nm:'Optimisation',wk:'Weeks 6–16',d:'Introduce targeted actives one at a time.'};
+  return{n:3,nm:'Maintenance',wk:'Ongoing',d:'Retinoids, antioxidants, daily SPF.'};
+}
+function riskList(o,ph,h){
+  return[
+    {l:'TEWL risk',lv:h<=1.5||(o<=1.0&&ph>5.8)?'Elevated':h<=2.5?'Moderate':'Low',n:h<=1.5?'Dehydrated SC — water loss elevated.':'Within range.'},
+    {l:'Irritation risk',lv:ph<4.0||ph>6.5?'Elevated':ph>5.8||ph<4.5?'Moderate':'Low',n:ph>6.5?'Alkaline pH weakens barrier defence.':ph<4.5?'Over-acid surface — protease activation.':'Acid mantle protective.'},
+    {l:'Breakout risk',lv:o>=3.8&&ph>=5.5?'Elevated':o>=3.0?'Moderate':'Low',n:o>=3.8?'Elevated sebum — follicular congestion likely.':o>=3.0?'Monitoring advised.':'Sebum not conducive to breakouts.'},
+    {l:'Microbiome',lv:ph>6.5?'Elevated':ph>5.8||ph<4.2?'Moderate':'Low',n:ph>6.5?'Alkaline shift favours pathogenic flora.':ph>5.8?'Slight C. acnes niche risk.':'Microbial ecology stable.'},
+  ];
+}
+function insightData(o,ph,h){
+  const i={};
+  i.o=o>=3.6
+    ?{col:'a',cause:`Sebum ${o.toFixed(1)}/5 — elevated`,title:'Follicular saturation',body:`Sebaceous overproduction creates oxidised squalene in follicles — a direct comedogenic trigger. <strong>Elevated oil ≠ barrier health.</strong> Excess clogs pores rather than reinforcing the lipid bilayer.`,action:`<strong>Niacinamide 5–10%</strong> suppresses sebocyte output; <strong>salicylic acid 1–2%</strong> clears intrafollicular plugs.`}
+    :o<=1.5
+    ?{col:'b',cause:`Sebum ${o.toFixed(1)}/5 — deficient`,title:'Lipid matrix deficiency',body:`Insufficient oil fails to maintain the hydrophobic surface film. <strong>This is a structural deficit</strong> — simultaneously impairing hydration, pH stability, and microbial defence.`,action:`<strong>Ceramides 1, 3, 6-II</strong> + squalane + cholesterol. Occlude every night.`}
+    :{col:'g',cause:`Sebum ${o.toFixed(1)}/5 — balanced`,title:'Sebaceous output in range',body:`Oil production maintains the acid mantle without overloading follicles. <strong>This equilibrium is fragile</strong> — over-cleansing or alkaline products disrupt it rapidly.`,action:`Preserve. Avoid surfactant-heavy washes and aggressive exfoliants.`};
+
+  i.ph=ph>6.5
+    ?{col:'r',cause:`pH ${ph.toFixed(1)} — alkaline`,title:'Acid mantle failure',body:`Kallikreins overactivate; ceramide-synthesising lipases are inhibited. <strong>Ceramide production drops at alkaline pH</strong> — undermining every moisturising step. Flora shifts toward C. acnes.`,action:`<strong>pH restoration first.</strong> Lactic acid 2% toner, pH-buffered cleanser (4.8–5.2). Remove all alkaline products.`}
+    :ph<4.5
+    ?{col:'a',cause:`pH ${ph.toFixed(1)} — overly acidic`,title:'Over-acidification',body:`KLK proteases over-stimulated — accelerating desquamation and causing paradoxical sensitivity. <strong>Common after prolonged undiluted acid use.</strong>`,action:`Pause all acids 2–3 weeks. Glycerin + panthenol only until recovery.`}
+    :{col:'g',cause:`pH ${ph.toFixed(1)} — optimal`,title:'Acid mantle equilibrium',body:`Every major barrier enzyme operates at peak efficiency. Ceramide synthesis, antimicrobial peptides, tight junctions — all active. <strong>Worth actively protecting.</strong>`,action:`Choose all products buffered 4.5–5.5. Avoid alkaline cleansers.`};
+
+  i.h=h<=1.0
+    ?{col:'r',cause:`Hydration ${h.toFixed(1)}/5 — critical`,title:'NMF depletion',body:`Natural Moisturising Factors are critically low. <strong>Dullness, tightness, sensitivity</strong> are direct downstream effects of corneocyte collapse.`,action:`Multi-weight HA + glycerin on damp skin, sealed immediately. Morning and evening, 4+ weeks.`}
+    :h<=2.5
+    ?{col:'a',cause:`Hydration ${h.toFixed(1)}/5 — low`,title:'Below optimal water content',body:`SC flexibility compromised. Skin tightens post-cleanse; exfoliation dysregulated. <strong>Barrier intact but under-resourced.</strong>`,action:`Layer: glycerin → HA → occlusive. Consistent use over 3–4 weeks shows measurable improvement.`}
+    :{col:'g',cause:`Hydration ${h.toFixed(1)}/5 — adequate`,title:'Corneocyte water content healthy',body:`Barrier is flexible and desquamation progresses normally. <strong>Complacency is the risk</strong> — seasonal shifts or actives can disrupt this quickly.`,action:`Maintain. Monitor when introducing actives or during season changes.`};
+
+  i.comb=o>=3.6&&h<=2.5
+    ?{col:'a',cause:'Elevated oil + low hydration',title:'Dehydrated-oily paradox',body:`Skin compensates for water loss by upregulating oil — but <strong>oil and water are independent variables.</strong> The water deficit persists beneath an oily surface.`,action:`<strong>Hydration first.</strong> Add oil-control only after hydration exceeds 3.0.`}
+    :ph>6.0&&h<=2.5
+    ?{col:'r',cause:'Alkaline pH + dehydration',title:'Dual barrier stressor',body:`Alkaline pH kills ceramide synthesis; low hydration depletes NMF. <strong>These compound each other.</strong> Without ceramides, water retention fails; without water, repair stalls.`,action:`pH toner + ceramide + HA simultaneously. No actives until barrier >65%.`}
+    :o<=1.5&&ph>5.8
+    ?{col:'b',cause:'Low oil + elevated pH',title:'Lipid-lean with pH drift',body:`Two mechanisms reduce water retention simultaneously: thin lipid film + impaired ceramide synthesis. <strong>Creates disproportionate vulnerability.</strong>`,action:`Ceramide formulas buffered to pH 5.0–5.5. Avoid anything above pH 6.0.`}
+    :{col:'g',cause:'Parameters in alignment',title:'No conflicting stressors',body:`Oil, pH, and hydration are not creating compounding deficits. <strong>Maintenance state</strong> — invest in long-term interventions.`,action:`Introduce retinoids at low dose. Daily SPF is the highest-ROI single habit.`};
+  return i;
+}
+
+// ── ORB ───────────────────────────────────────────────────────────────
+function drawOrb(cv,o,ph,h){
+  const ctx=cv.getContext('2d'),w=cv.width,cx=w/2,cy=w/2,r=w/2;
+  ctx.clearRect(0,0,w,w);
+  const isOily=o>=3.0,isDry=o<=1.5,isAlk=ph>6.0;
+  let c1,c2;
+  if(isAlk&&h<=2){c1='#c0b0a8';c2='#786050';}
+  else if(isOily&&h<=2){c1='#c4bc88';c2='#887840';}
+  else if(isDry){c1='#a0b8cc';c2='#5c80a0';}
+  else if(isOily){c1='#acc4a0';c2='#5a8a5c';}
+  else{c1='#a8c8b0';c2='#507860';}
+  // pH tint
+  let tint=null;
+  if(ph<4.5)tint=`rgba(200,160,80,${Math.min(.15,(4.5-ph)*.065)})`;
+  else if(ph>5.5)tint=`rgba(150,90,80,${Math.min(.17,(ph-5.5)*.06)})`;
+  const layers=Math.round(2+o*.55);
+  for(let i=0;i<layers;i++){
+    const gx=cx*(.64+Math.sin(i*1.3)*.26),gy=cy*(.54+Math.cos(i*1.6)*.24);
+    const gr=ctx.createRadialGradient(gx,gy,r*.04*(i+1),cx,cy,r*(.73+i*.07));
+    gr.addColorStop(0,c1+'CC');gr.addColorStop(1,c2+'33');
+    ctx.beginPath();ctx.arc(cx,cy,r*.97,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+  }
+  const sg=ctx.createRadialGradient(cx*.72,cy*.68,0,cx*.72,cy*.68,r*(.38+h/9));
+  sg.addColorStop(0,`rgba(255,255,255,${.1+h/20})`);sg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.beginPath();ctx.arc(cx,cy,r*.97,0,Math.PI*2);ctx.fillStyle=sg;ctx.fill();
+  if(tint){ctx.beginPath();ctx.arc(cx,cy,r*.97,0,Math.PI*2);ctx.fillStyle=tint;ctx.fill();}
+  // soft accent glow for balanced
+  if(Math.abs(ph-5.0)<.7&&h>=2.5&&o>=2&&o<=4){
+    const ag=ctx.createRadialGradient(cx,cy,r*.4,cx,cy,r*.97);
+    ag.addColorStop(.8,'rgba(106,172,130,0)');ag.addColorStop(1,'rgba(106,172,130,.07)');
+    ctx.beginPath();ctx.arc(cx,cy,r*.97,0,Math.PI*2);ctx.fillStyle=ag;ctx.fill();
+  }
+  const vg=ctx.createRadialGradient(cx,cy,r*.62,cx,cy,r*.97);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.15)');
+  ctx.beginPath();ctx.arc(cx,cy,r*.97,0,Math.PI*2);ctx.fillStyle=vg;ctx.fill();
+}
+
+// ── GRAPH ─────────────────────────────────────────────────────────────
+function drawGraph(cv,o,ph,h){
+  // normalize pH to 0-5 range (3.0 = 0, 7.5 = 5)
+  const phN=(ph-3)/4.5*5;
+  const vals=[
+    {lbl:'Sebum',v:o,color:'#6aac82',optMin:1.5,optMax:3.5},
+    {lbl:'pH (norm.)',v:phN,color:'#5882a8',optMin:1.5,optMax:2.8},// 4.5–5.5 maps ~1.33–2.8
+    {lbl:'Hydration',v:h,color:'#c07050',optMin:2.5,optMax:5.0},
+  ];
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  const pad={t:28,r:24,b:36,l:40};
+  const iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
+  const barW=Math.floor(iW/3);
+  const maxV=5;
+  ctx.clearRect(0,0,W,H);
+
+  // grid lines
+  ctx.strokeStyle='rgba(30,20,10,.06)';ctx.lineWidth=1;
+  for(let v=0;v<=5;v++){
+    const y=pad.t+iH*(1-v/maxV);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    ctx.fillStyle='rgba(30,20,10,.25)';ctx.font=`500 9px 'DM Mono',monospace`;ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(v.toFixed(0),pad.l-6,y);
+  }
+
+  vals.forEach((d,i)=>{
+    const bx=pad.l+i*barW;
+    const bw=barW*.55;
+    const bxc=bx+(barW-bw)/2;
+
+    // optimal zone
+    const oy1=pad.t+iH*(1-d.optMax/maxV);
+    const oy2=pad.t+iH*(1-d.optMin/maxV);
+    ctx.fillStyle='rgba(30,20,10,.04)';
+    ctx.fillRect(bx+4,oy1,barW-8,oy2-oy1);
+    // dashed border
+    ctx.strokeStyle='rgba(30,20,10,.12)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.strokeRect(bx+4,oy1,barW-8,oy2-oy1);
+    ctx.setLineDash([]);
+
+    // bar fill (animated via timeout)
+    const barH2=iH*(d.v/maxV);
+    const by=pad.t+iH-barH2;
+    const gr=ctx.createLinearGradient(0,by,0,pad.t+iH);
+    gr.addColorStop(0,d.color+'EE');gr.addColorStop(1,d.color+'44');
+    ctx.fillStyle=gr;
+    const radius=4;
+    ctx.beginPath();
+    ctx.moveTo(bxc+radius,by);ctx.lineTo(bxc+bw-radius,by);
+    ctx.quadraticCurveTo(bxc+bw,by,bxc+bw,by+radius);
+    ctx.lineTo(bxc+bw,pad.t+iH);ctx.lineTo(bxc,pad.t+iH);ctx.lineTo(bxc,by+radius);
+    ctx.quadraticCurveTo(bxc,by,bxc+radius,by);ctx.fill();
+
+    // value dot at top
+    ctx.beginPath();ctx.arc(bxc+bw/2,by,3.5,0,Math.PI*2);ctx.fillStyle=d.color;ctx.fill();
+
+    // value label
+    ctx.fillStyle=d.color;ctx.font=`600 11px 'DM Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='bottom';
+    const dispVal=d.lbl.includes('pH')?ph.toFixed(1):d.v.toFixed(1);
+    ctx.fillText(dispVal,bxc+bw/2,by-5);
+
+    // x label
+    ctx.fillStyle='rgba(30,20,10,.4)';ctx.font=`500 9px 'DM Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(d.lbl,bx+barW/2,pad.t+iH+8);
+  });
+}
+
+// ── ORGANIC SIGNAL VIEW ───────────────────────────────────────────────
+let SIG={anim:null,params:null,t:0,showLbl:false};
+const LOG=[
+  'Reading biosensor patch…',
+  'Normalising signal values…',
+  'Mapping to skin model…',
+  'Deriving barrier state…',
+  'Protocol generated.'
+];
+let logI=0,logTmr=null;
+
+function openSignal(){
+  const el=document.getElementById('signal');
+  el.classList.add('on');
+  requestAnimationFrame(()=>el.classList.add('vis'));
+  SIG.params=APP.params;
+  resizeSig();
+  replaySignal();
+}
+function closeSignal(){
+  const el=document.getElementById('signal');
+  el.classList.remove('vis');
+  setTimeout(()=>el.classList.remove('on'),500);
+  cancelAnimationFrame(SIG.anim);
+  clearInterval(logTmr);
+}
+function replaySignal(){
+  SIG.t=0;logI=0;
+  clearInterval(logTmr);
+  const le=document.getElementById('sigLog');
+  le.textContent=LOG[0];
+  logTmr=setInterval(()=>{
+    logI=Math.min(logI+1,LOG.length-1);
+    le.textContent=LOG[logI];
+    if(logI===LOG.length-1)clearInterval(logTmr);
+  },1050);
+  cancelAnimationFrame(SIG.anim);
+  animSig();
+}
+function toggleSigLabels(){SIG.showLbl=!SIG.showLbl}
+function resizeSig(){
+  const cv=document.getElementById('sigCanvas');
+  const sz=Math.min(window.innerWidth,window.innerHeight*.7,480);
+  cv.width=sz;cv.height=sz;
+}
+
+function animSig(){
+  const cv=document.getElementById('sigCanvas');
+  if(!cv||!document.getElementById('signal').classList.contains('on'))return;
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  SIG.t+=0.014;
+  ctx.clearRect(0,0,W,H);
+
+  const cx=W/2,cy=H/2;
+  const p=SIG.params||{o:2.5,ph:5.0,h:2.5};
+
+  // Three sensor positions (organic triangle, not square PCB)
+  const R=W*.28;
+  const sensors=[
+    {id:'o',lbl:'SEBUM',angle:-Math.PI/2,val:p.o.toFixed(1),col:'#6aac82'},
+    {id:'ph',lbl:'pH',angle:-Math.PI/2+Math.PI*2/3,val:p.ph.toFixed(1),col:'#5882a8'},
+    {id:'h',lbl:'HYD',angle:-Math.PI/2+Math.PI*4/3,val:p.h.toFixed(1),col:'#c07050'},
+  ];
+  sensors.forEach(s=>{
+    s.x=cx+R*Math.cos(s.angle);
+    s.y=cy+R*Math.sin(s.angle);
+  });
+
+  // Draw soft ambient glow at center
+  const br=Math.sin(SIG.t*.8)*.06+.94;
+  const coreR=W*.09*br;
+  const cg=ctx.createRadialGradient(cx,cy,0,cx,cy,coreR*3.5);
+  cg.addColorStop(0,'rgba(106,172,130,.18)');
+  cg.addColorStop(.4,'rgba(106,172,130,.06)');
+  cg.addColorStop(1,'rgba(106,172,130,0)');
+  ctx.beginPath();ctx.arc(cx,cy,coreR*3.5,0,Math.PI*2);ctx.fillStyle=cg;ctx.fill();
+
+  // Draw flowing curved channels (bezier) from sensors to center
+  sensors.forEach((s,si)=>{
+    // Control point for bezier — slightly curved inward
+    const mx=(s.x+cx)/2,my=(s.y+cy)/2;
+    const perpX=-(cy-my)*.3,perpY=(cx-mx)*.3;
+    const cpx=mx+perpX,cpy=my+perpY;
+
+    // Base channel
+    ctx.beginPath();ctx.moveTo(s.x,s.y);
+    ctx.quadraticCurveTo(cpx,cpy,cx,cy);
+    ctx.strokeStyle=s.col+'28';ctx.lineWidth=2;ctx.stroke();
+
+    // Animated pulses — multiple per channel
+    for(let pi=0;pi<2;pi++){
+      const speed=.25+si*.07+pi*.15;
+      const offset=(si*.33+pi*.5);
+      const t=((SIG.t*speed+offset)%1);
+      // point on quadratic bezier
+      const bx=(1-t)*(1-t)*s.x+2*(1-t)*t*cpx+t*t*cx;
+      const by=(1-t)*(1-t)*s.y+2*(1-t)*t*cpy+t*t*cy;
+      // glow
+      const pr=ctx.createRadialGradient(bx,by,0,bx,by,9);
+      pr.addColorStop(0,s.col+'cc');pr.addColorStop(1,'transparent');
+      ctx.beginPath();ctx.arc(bx,by,9,0,Math.PI*2);ctx.fillStyle=pr;ctx.fill();
+      ctx.beginPath();ctx.arc(bx,by,2.5,0,Math.PI*2);ctx.fillStyle=s.col+'ee';ctx.fill();
+    }
+  });
+
+  // Core circle
+  ctx.beginPath();ctx.arc(cx,cy,coreR,0,Math.PI*2);
+  const cgFill=ctx.createRadialGradient(cx*.96,cy*.94,0,cx,cy,coreR);
+  cgFill.addColorStop(0,'rgba(150,220,170,.45)');cgFill.addColorStop(1,'rgba(60,130,90,.2)');
+  ctx.fillStyle=cgFill;ctx.fill();
+  ctx.strokeStyle='rgba(106,172,130,.5)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Core label
+  ctx.fillStyle='rgba(180,240,200,.9)';ctx.font=`500 10px 'DM Mono',monospace`;
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CORE',cx,cy);
+
+  // Sensor nodes
+  sensors.forEach(s=>{
+    const pulse=1+Math.sin(SIG.t*1.8+sensors.indexOf(s)*1.1)*.05;
+    const nr=W*.048;
+    // glow
+    const ng=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,nr*3);
+    ng.addColorStop(0,s.col+'44');ng.addColorStop(1,'transparent');
+    ctx.beginPath();ctx.arc(s.x,s.y,nr*3*pulse,0,Math.PI*2);ctx.fillStyle=ng;ctx.fill();
+    // circle
+    ctx.beginPath();ctx.arc(s.x,s.y,nr,0,Math.PI*2);
+    ctx.fillStyle='rgba(12,22,16,.65)';ctx.fill();
+    ctx.strokeStyle=s.col+'aa';ctx.lineWidth=1.5;ctx.stroke();
+    // value
+    ctx.fillStyle=s.col+'cc';ctx.font=`400 11px 'DM Mono',monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.val,s.x,s.y);
+    if(SIG.showLbl){
+      ctx.fillStyle=s.col+'66';ctx.font=`300 8px 'DM Mono',monospace`;
+      const la=s.angle+Math.PI;// point away from center
+      ctx.fillText(s.lbl,s.x+Math.cos(la)*nr*2.2,s.y+Math.sin(la)*nr*2.2);
+    }
+  });
+
+  SIG.anim=requestAnimationFrame(animSig);
+}
+
+// swipe to close
+let _ty=0;
+document.addEventListener('touchstart',e=>{_ty=e.touches[0].clientY},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(document.getElementById('signal').classList.contains('vis')&&e.changedTouches[0].clientY-_ty>80)closeSignal();
+},{passive:true});
+window.addEventListener('resize',()=>{if(document.getElementById('signal').classList.contains('vis'))resizeSig();});
+
+// ── ROUTINE ENGINE ─────────────────────────────────────────────────────
+function buildRoutine(o,ph,h,barrier){
+  const isOily=o>=3.6,isDry=o<=1.5,isDehy=h<=2.5;
+  const isAlk=ph>6.5,isAcid=ph<4.5,comp=barrier<50;
+  const conflicts=[];
+  if(isOily&&!comp)conflicts.push('Retinoid + BHA: alternate evenings. Do not combine in the same session.');
+  if(isAcid)conflicts.push('pH below 4.5: AHA actives excluded until pH recovers above 4.5.');
+  if(comp)conflicts.push('Barrier integrity below 50%: all actives suspended until score exceeds 60%.');
+
+  const cleanser=isOily
+    ?{n:'Cleanser',p:'Low-pH BHA Gel Cleanser',why:'BHA 0.5–1% dissolves oxidised follicular lipids. Low pH preserves the acid mantle.',ing:['Salicylic acid 0.5–1%','Cocamidopropyl betaine','Panthenol','Glycerin'],avoid:'SLS/SLES above pH 6.5 — strips NMF, triggers sebum rebound.',alts:[{n:'pH-Balanced Foam Wash',t:'budget'},{n:'BHA Gel Cleanser',t:'mid'},{n:'Enzyme Low-pH Cleanser',t:'premium'}],tier:'mid'}
+    :isDry
+    ?{n:'Cleanser',p:'Ceramide Milk Cleanser',why:'Deposits emollients while cleansing. Preserves the residual acid mantle.',ing:['Ceramide NP','Glycerin','Squalane','Sodium PCA'],avoid:'Foaming cleansers — stripping counteracts every subsequent step.',alts:[{n:'Micellar Water',t:'budget'},{n:'Ceramide Cream Cleanser',t:'mid'},{n:'Oil-to-Milk Cleanser',t:'premium'}],tier:'mid'}
+    :{n:'Cleanser',p:'Amino Acid Gentle Cleanser',why:'pH 5.0–5.5 surfactants clean without alkalinising or stripping.',ing:['Sodium cocoyl glutamate','Glycerin','Panthenol','Allantoin'],avoid:'Soap-based and fragrance-heavy washes.',alts:[{n:'Mild Gel Wash',t:'budget'},{n:'Amino Acid Cleanser',t:'mid'},{n:'Probiotic Foam Wash',t:'premium'}],tier:'budget'};
+
+  const tPh={n:'pH-Rebalancing Toner',p:'Lactic Acid 2% Toner',why:'Shifts surface pH toward 4.5–5.5. Activates ceramide-synthesising enzymes immediately post-cleanse.',ing:['Lactic acid 2%','Sodium lactate','Glycerin','Panthenol'],avoid:'AHA >5% — will over-acidify.',alts:[{n:'Mandelic Acid 2%',t:'budget'},{n:'PHA Toner',t:'mid'},{n:'Microbiome Acid Toner',t:'premium'}],tier:'mid'};
+  const tHyd={n:'Hydrating Essence',p:'Multi-Weight HA Toner',why:'Builds hydration gradient across SC layers. More effective than single-weight HA.',ing:['HA (3 weights)','Beta-glucan','Glycerin','Panthenol'],avoid:'Alcohol-based toners — dehydrate faster than they hydrate.',alts:[{n:'Glycerin Toner',t:'budget'},{n:'Multi-HA Essence',t:'mid'},{n:'Beta-Glucan Toner',t:'premium'}],tier:'budget'};
+
+  const serAM=comp
+    ?{n:'AM Serum',p:'Ceramide + Cholesterol + Fatty Acid Complex',why:'3:1:1 ratio mirrors natural SC lipid composition. Structural repair before any active.',ing:['Ceramide NP','Ceramide AP','Cholesterol','Linoleic acid','Phytosphingosine'],avoid:'All actives. Fragrance, alcohol, essential oils.',alts:[{n:'Ceramide Gel',t:'budget'},{n:'Barrier Ceramide Essence',t:'mid'},{n:'Lamellar Lipid Concentrate',t:'premium'}],tier:'premium'}
+    :isOily
+    ?{n:'AM Serum',p:isDehy?'Niacinamide 5% + HA Serum':'Niacinamide 10% + Zinc PCA',why:isDehy?'Niacinamide 5% modulates sebocyte output via PPAR-γ; HA addresses the water deficit driving rebound.':'Niacinamide 10% + zinc PCA reduces sebaceous synthesis and 5α-reductase-driven overproduction.',ing:isDehy?['Niacinamide 5%','Hyaluronic acid','Glycerin','Panthenol']:['Niacinamide 10%','Zinc PCA','Glycerin','Allantoin'],avoid:'Vitamin C (L-ascorbic acid) in the same step.',alts:[{n:'Niacinamide 5%',t:'budget'},{n:'Niacinamide + Zinc',t:'mid'},{n:'Niacinamide 10% + Peptides',t:'premium'}],tier:'mid'}
+    :{n:'AM Serum',p:'Polyglutamic Acid + Panthenol Serum',why:'PGA holds 4× more moisture than HA. Panthenol supports barrier repair.',ing:['Polyglutamic acid','Panthenol','HA','Glycerin'],avoid:'Heavy silicone primers in same layer.',alts:[{n:'HA Serum',t:'budget'},{n:'HA + Panthenol Fluid',t:'mid'},{n:'PGA + Peptide Serum',t:'premium'}],tier:'mid'};
+
+  const mAM=isOily
+    ?{n:'Moisturiser AM',p:'Oil-Free Ceramide Gel-Cream',why:'Seals serum; reinforces lipid matrix without adding oil.',ing:['Ceramide NP','Niacinamide','Glycerin','Dimethicone','Aloe'],avoid:'Heavy emollients, petrolatum, facial oils.',alts:[{n:'Aloe Gel',t:'budget'},{n:'Oil-Free Ceramide Lotion',t:'mid'},{n:'Barrier Gel Fluid',t:'premium'}],tier:'mid'}
+    :isDry||comp
+    ?{n:'Moisturiser AM',p:'Ceramide Barrier Cream with Squalane',why:'Ceramides rebuild lamellar structure; squalane replenishes surface lipids without clogging.',ing:['Ceramide 1','Ceramide 3','Ceramide 6-II','Squalane','Glycerin','Cholesterol'],avoid:'Mattifying powders, alcohol sprays.',alts:[{n:'Glycerin Cream',t:'budget'},{n:'Ceramide + Squalane Cream',t:'mid'},{n:'Lipid-Matrix Concentrate',t:'premium'}],tier:'mid'}
+    :{n:'Moisturiser AM',p:'Lightweight Ceramide Lotion',why:'Maintains hydrolipid film without overloading. Clean SPF base.',ing:['Ceramide NP','Glycerin','Panthenol','Dimethicone'],avoid:'Fragrance, alcohol sprays before applying.',alts:[{n:'Lightweight HA Lotion',t:'budget'},{n:'Ceramide Lotion',t:'mid'},{n:'Multi-Lamellar Emulsion',t:'premium'}],tier:'budget'};
+
+  const spf={n:'Sunscreen',p:'Broad-Spectrum SPF 50+ / PA++++',why:'UV degrades ceramides and activates collagenase — worsening every condition in this profile.',ing:['Zinc oxide 5–10%','Tinosorb S','Uvinul A Plus','Glycerin'],avoid:'High-alcohol sprays on dry or compromised skin.',alts:[{n:'Mineral SPF 30',t:'budget'},{n:'Tinted Zinc SPF 50',t:'mid'},{n:'Hybrid SPF 50+ PA++++',t:'premium'}],tier:'mid'};
+
+  const cPM={...cleanser,n:'Cleanser (PM)',p:cleanser.p+' · double-cleanse if SPF worn'};
+  const tPM=comp
+    ?{n:'PM Treatment',p:'Ceramide + Linoleic Acid Recovery Serum',why:'Linoleic acid provides fatty acid precursors for lamellar body regeneration — specifically depleted in barrier-damaged skin.',ing:['Ceramide 1','Ceramide 3','Linoleic acid','Panthenol','Beta-glucan'],avoid:'All actives without exception at this barrier score.',alts:[{n:'Glycerin + Panthenol Gel',t:'budget'},{n:'Ceramide Barrier Serum',t:'mid'},{n:'Lamellar Recovery Complex',t:'premium'}],tier:'premium'}
+    :isOily
+    ?{n:'PM Treatment',p:isAcid?'Azelaic Acid 10% Cream':'Adapalene 0.025% Gel',why:isAcid?'pH-neutral, comedolytic, anti-inflammatory. Correct for over-acid skin where retinoids would worsen acidity.':'Normalises follicular keratinisation. Reduces microcomedone formation.',ing:isAcid?['Azelaic acid 10%','Panthenol','Glycerin']:['Adapalene 0.025%','Glycerin','Panthenol'],avoid:'AHA + retinoid same session. Benzoyl peroxide over retinoid.',alts:[{n:'Azelaic Acid 10%',t:'budget'},{n:'Adapalene 0.1%',t:'mid'},{n:'Retinal 0.05%',t:'premium'}],tier:'mid',conflictNote:!isAcid?'Alternate nights with BHA.':undefined}
+    :isDehy
+    ?{n:'PM Treatment',p:'Multi-Weight HA + Peptide Night Serum',why:'TEWL peaks during sleep. Applied to damp skin and sealed, this delivers measurable overnight hydration.',ing:['HA (3 weights)','Pentapeptide-4','Glycerin','Panthenol','Sodium PCA'],avoid:'Dry-face application. Alcohol immediately before.',alts:[{n:'Glycerin + HA Night Gel',t:'budget'},{n:'Multi-HA Serum',t:'mid'},{n:'Peptide + HA Complex',t:'premium'}],tier:'mid'}
+    :{n:'PM Treatment',p:'Encapsulated Retinol 0.1%',why:'Stable barrier means safe retinol introduction. Collagen stimulation and barrier strengthening over 8–12 weeks.',ing:['Retinol 0.1% (encapsulated)','Squalane','Ceramide NP','Vitamin E'],avoid:'AHA same evening. Vitamin C same session.',alts:[{n:'Retinol 0.05%',t:'budget'},{n:'Encapsulated Retinol 0.1%',t:'mid'},{n:'Retinal 0.03% Fluid',t:'premium'}],tier:'mid'};
+
+  const mPM=isDry||comp
+    ?{n:'Moisturiser PM',p:'Occlusive Ceramide Night Cream',why:'TEWL peaks during sleep — occlusion is non-negotiable.',ing:['Ceramide 1','Ceramide 3','Ceramide 6-II','Panthenol','Shea butter','Cholesterol'],avoid:'Lightweight gels — insufficient occlusivity.',alts:[{n:'Basic Night Cream',t:'budget'},{n:'Ceramide + Shea Cream',t:'mid'},{n:'Bio-Lipid Night Balm',t:'premium'}],tier:'mid'}
+    :isOily
+    ?{n:'Moisturiser PM',p:'Oil-Free Ceramide Gel-Cream',why:'Ceramide seal without occluding follicles.',ing:['Ceramide NP','Glycerin','Niacinamide','Dimethicone','Allantoin'],avoid:'Heavy creams, facial oils overnight.',alts:[{n:'Oil-Free Aloe Gel',t:'budget'},{n:'Ceramide Gel-Cream',t:'mid'},{n:'Barrier Gel Fluid',t:'premium'}],tier:'budget'}
+    :{n:'Moisturiser PM',p:'Ceramide + Glycerin Night Cream',why:'Seals the treatment layer; sufficient occlusivity to reduce nocturnal TEWL.',ing:['Ceramide NP','Ceramide EOP','Glycerin','Panthenol','Squalane'],avoid:'Fragrance — increased PM permeability raises sensitisation risk.',alts:[{n:'Night Cream + HA',t:'budget'},{n:'Ceramide Night Cream',t:'mid'},{n:'Bio-Lipid Night Balm',t:'premium'}],tier:'mid'};
+
+  const tonerItem=isAlk?tPh:isDehy?tHyd:null;
+  const amMap={
+    minimal:[cleanser,mAM,spf],
+    standard:tonerItem?[cleanser,tonerItem,serAM,mAM,spf]:[cleanser,serAM,mAM,spf],
+    advanced:tonerItem?[cleanser,tonerItem,serAM,mAM,spf]:[cleanser,serAM,mAM,spf],
+  };
+  const pmMap={
+    minimal:[cPM,mPM],
+    standard:[cPM,tPM,mPM],
+    advanced:tonerItem?[cPM,tonerItem,tPM,mPM]:[cPM,tPM,mPM],
+  };
+  const weekly=[];
+  if(!comp){
+    if(isOily)weekly.push({n:'BHA Exfoliant (×1–2/wk)',wh:'After cleansing, before serum',d:'Salicylic acid 2% leave-on. Non-retinoid nights only.'});
+    else if(!isDry)weekly.push({n:'Lactic Acid 5% Mask (×1/wk)',wh:'10-min leave-on after cleansing',d:'Gentle cell turnover. Not same night as retinoid.'});
+    if(barrier>=75)weekly.push({n:'Vitamin C 10–15% AM (×3–4/wk)',wh:'After toner, before moisturiser',d:'L-ascorbic acid — neutralises UV ROS, stimulates pro-collagen. Store airtight.'});
+  }
+  if(isDry||comp)weekly.push({n:'Overnight Mask (×2/wk)',wh:'Final step, leave overnight',d:'PGA + panthenol + ceramide sleep mask. Enhanced occlusion for recovery nights.'});
+  return{amMap,pmMap,weekly,conflicts};
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────
+let APP={params:null,routine:null,age:28};
+let budgetIdx=0;
+const BUDGETS=['minimal','standard','advanced'];
+
+function renderSteps(id,steps){
+  const el=document.getElementById(id);el.innerHTML='';
+  steps.forEach((s,i)=>{
+    const tc={budget:'t-b',mid:'t-m',premium:'t-p'}[s.tier]||'t-m';
+    const d=document.createElement('div');d.className='step';
+    d.innerHTML=`<div class="shead" onclick="this.parentElement.classList.toggle('open')">
+      <div class="snum">${i+1}</div>
+      <div><div class="sname">${s.n}</div><div class="sprod">${s.p}</div></div>
+      <span class="stier ${tc}">${s.tier}</span><span class="schev">▾</span>
+    </div>
+    <div class="sbody">
+      <div class="sdt">Why</div><div class="sdd">${s.why}</div>
+      <div class="sdt">Ingredients</div><div class="chips">${s.ing.map(x=>`<span class="chip">${x}</span>`).join('')}</div>
+      <div class="sdt">Avoid</div><div class="sdd av">${s.avoid}</div>
+      ${s.conflictNote?`<div class="cnote">${s.conflictNote}</div>`:''}
+      <div class="alts-wrap"><div class="alts-lbl">Alternatives</div>${s.alts.map(a=>`<div class="alt-r"><span>${a.n}</span><span class="alt-t">${a.t}</span></div>`).join('')}</div>
+    </div>`;
+    el.appendChild(d);
+  });
+}
+function renderWeekly(w){
+  const bl=document.getElementById('wBlock'),ct=document.getElementById('wItems');
+  if(!w.length){bl.style.display='none';return;}
+  bl.style.display='';
+  ct.innerHTML=w.map(x=>`<div class="witem"><div class="wname">${x.n}</div><div class="wwhen">${x.wh}</div><div class="wdesc">${x.d}</div></div>`).join('');
+}
+function setBudget(idx){
+  budgetIdx=idx;
+  const k=BUDGETS[idx],pct=[0,50,100][idx];
+  document.getElementById('bFill').style.width=pct+'%';
+  document.getElementById('bThumb').style.left=pct+'%';
+  document.getElementById('bVal').textContent=k.charAt(0).toUpperCase()+k.slice(1);
+  document.querySelectorAll('.bstop').forEach((e,i)=>e.classList.toggle('act',i===idx));
+  if(APP.routine){renderSteps('amSteps',APP.routine.amMap[k]);renderSteps('pmSteps',APP.routine.pmMap[k]);}
+}
+function budgetClick(e){
+  const r=document.getElementById('bTrack').getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width;
+  setBudget(x<.33?0:x<.66?1:2);
+}
+function onAge(){
+  APP.age=Math.min(85,Math.max(12,parseInt(document.getElementById('ageInp').value)||28));
+}
+function toggleRaw(){
+  const p=document.getElementById('rawPanel');p.classList.toggle('on');
+  if(p.classList.contains('on')&&APP.params){
+    const{o,ph,h}=APP.params;
+    p.innerHTML=[
+      `<span class="rk">// DermaSense · decode</span>`,
+      `<span class="rk">o</span>       <span class="rv">${o.toFixed(2)}</span>   // sebum [0–5]`,
+      `<span class="rk">ph</span>      <span class="rv">${ph.toFixed(2)}</span>   // skin pH [3.0–7.5]`,
+      `<span class="rk">h</span>       <span class="rv">${h.toFixed(2)}</span>   // hydration [0–5]`,
+      `<span class="rk">age</span>     <span class="rv">${APP.age}</span>`,
+      `<span class="rk">barrier</span> <span class="rv">${bScore(o,ph,h)}%</span>`,
+      `<span class="rk">stability</span> <span class="rv">${stabIdx(o,ph,h)}</span>`,
+      `<span class="rk">type</span>    <span class="rv">"${sType(o,ph,h)}"</span>`,
+    ].join('\n');
+  }
+}
+function shareResult(){
+  if(!APP.params)return;
+  const{o,ph,h}=APP.params;
+  const url=`${location.origin}${location.pathname}?o=${o}&ph=${ph}&h=${h}`;
+  try{navigator.clipboard.writeText(url);showToast('URL copied ✓');}catch{prompt('Copy:',url);}
+}
+function showToast(m){
+  const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2500);
+}
+
+function runDecode(o,ph,h){
+  const el=document.getElementById('hDecode');
+  const seq=[
+    `O=${(Math.random()*5).toFixed(2)} pH=${(Math.random()*4+3).toFixed(2)} H=${(Math.random()*5).toFixed(2)}`,
+    `O=${(Math.random()*5).toFixed(2)} pH=${(Math.random()*4+3).toFixed(2)} H=${(Math.random()*5).toFixed(2)}`,
+    `O=${o.toFixed(2)} pH=${ph.toFixed(2)} H=${h.toFixed(2)}  ✓`,
+    'Classification ready.'
+  ];
+  let i=0;const t=setInterval(()=>{el.textContent=seq[i];i++;if(i>=seq.length)clearInterval(t);},85);
+}
+
+// ── BOOT ───────────────────────────────────────────────────────────────
+function boot(params){
+  APP.params=params;APP.age=parseInt(document.getElementById('ageInp').value)||28;
+  const{o,ph,h}=params,age=APP.age;
+  const oA=aOil(o,age),phA=aPh(ph),hA=aHyd(h,age);
+  const type=sType(o,ph,h),conds=sConds(o,ph,h);
+  const barrier=bScore(o,ph,h),stab=stabIdx(o,ph,h);
+  const ph2=phase(barrier),risks=riskList(o,ph,h),ins=insightData(o,ph,h);
+  const routine=buildRoutine(o,ph,h,barrier);
+  APP.routine=routine;
+
+  const CM={g:'#3d7a56',a:'#b06028',r:'#a03030',b:'#3a5e88'};
+  const conclusion=o>=3.6&&h<=2.5
+    ?`Sebum elevated (${o.toFixed(1)}), hydration low (${h.toFixed(1)}) — dehydrated-oily pattern. Water deficit first.`
+    :o<=1.5&&h<=2.0
+    ?`Lipid and water reserves both critically low. Structural repair before actives.`
+    :ph>6.5
+    ?`Alkaline pH (${ph.toFixed(1)}) is the primary concern — acid mantle restoration precedes everything.`
+    :h<=2.0
+    ?`Hydration at ${h.toFixed(1)} is the main target. NMF replenishment, morning and evening.`
+    :`Parameters in workable range — optimisation and daily SPF are the focus.`;
+
+  // progress
+  const pg=document.getElementById('prog');
+  let pv=0;const pt=setInterval(()=>{pv+=Math.random()*14;if(pv>=88){clearInterval(pt);pv=88;}pg.style.width=pv+'%';},80);
+
+  document.getElementById('await').classList.add('out');
+  setTimeout(()=>{
+    document.getElementById('await').style.display='none';
+    document.getElementById('app').classList.add('on');
+    pg.style.width='100%';setTimeout(()=>pg.style.opacity='0',500);
+
+    // Nav
+    document.getElementById('hTime').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('navCenter').innerHTML=`<span>O <em>${o.toFixed(1)}</em></span><span>pH <em>${ph.toFixed(1)}</em></span><span>H <em>${h.toFixed(1)}</em></span>`;
+
+    // Hero
+    runDecode(o,ph,h);
+    setTimeout(()=>{
+      document.getElementById('hHeadline').innerHTML=`${type}<br><em>Profile</em>`;
+      document.getElementById('hType').textContent=type;
+      document.getElementById('hStatus').textContent=ph2.nm+' · Phase '+ph2.n;
+      document.getElementById('hTags').innerHTML=conds.map((c,i)=>`<span class="htag${i===0?' lit':''}">${c}</span>`).join('');
+      document.getElementById('hInsight').textContent=conclusion;
+    },480);
+
+    // Orb
+    setTimeout(()=>drawOrb(document.getElementById('orbCanvas'),o,ph,h),360);
+
+    // Satellites
+    const setSat=(id,val,desc,bar,col,d)=>setTimeout(()=>{
+      document.getElementById(id).classList.add('on');
+      document.getElementById(id+'v').textContent=val;
+      document.getElementById(id+'d').textContent=desc;
+      document.getElementById(id+'b').style.width=(bar*100).toFixed(0)+'%';
+      document.getElementById(id+'b').style.background=col;
+    },d);
+    setSat('sO',o.toFixed(1),oA.sh,oA.bar,CM[oA.col],780);
+    setSat('sPh',ph.toFixed(1),phA.sh,phA.bar,CM[phA.col],940);
+    setSat('sH',h.toFixed(1),hA.sh,hA.bar,CM[hA.col],1100);
+
+    // Ribbon
+    const rv=(id,v,u)=>document.getElementById(id).innerHTML=v+`<span class="rib-unit">${u}</span>`;
+    rv('rO',o.toFixed(1),'/5');rv('rPh',ph.toFixed(1),'pH');rv('rH',h.toFixed(1),'/5');rv('rBi',barrier,'%');
+    const rStat=(id,col,txt)=>{const e=document.getElementById(id);e.textContent=txt;e.style.color=col;};
+    rStat('rOs',CM[oA.col],oA.st);rStat('rPhs',CM[phA.col],phA.st);rStat('rHs',CM[hA.col],hA.st);
+    rStat('rBis',barrier>=75?CM.g:barrier>=50?CM.a:CM.r,barrier>=75?'Healthy':barrier>=50?'Mildly stressed':'Compromised');
+    setTimeout(()=>{
+      const rib=(id,w,col)=>{const e=document.getElementById(id);e.style.width=w+'%';e.style.background=col;};
+      rib('rOb',o/5*100,CM[oA.col]);rib('rPhb',(ph-3)/4.5*100,CM[phA.col]);
+      rib('rHb',h/5*100,CM[hA.col]);document.getElementById('rBib').style.width=barrier+'%';
+    },280);
+
+    // Graph
+    setTimeout(()=>{
+      const cv=document.getElementById('graphCanvas');
+      cv.width=cv.offsetWidth*window.devicePixelRatio||700;
+      cv.height=240;
+      drawGraph(cv,o,ph,h);
+    },500);
+
+    // Graph stats
+    const phN=(ph-3)/4.5*5;
+    document.getElementById('graphStats').innerHTML=[
+      {lbl:'Sebum',v:o,max:5,optMin:1.5,optMax:3.5,unit:'/5',col:CM[oA.col],zone:oA.sh},
+      {lbl:'pH (norm.)',v:phN,max:5,optMin:1.33,optMax:2.78,unit:'/5',col:CM[phA.col],zone:phA.sh,real:ph.toFixed(1)+'pH'},
+      {lbl:'Hydration',v:h,max:5,optMin:2.5,optMax:5,unit:'/5',col:CM[hA.col],zone:hA.sh},
+    ].map(s=>{
+      const inOpt=s.v>=s.optMin&&s.v<=s.optMax;
+      const pct=s.v/s.max*100;
+      const zc=inOpt?'z-good':s.v<s.optMin?'z-warn':'z-ok';
+      return`<div class="gstat">
+        <div class="gstat-top">
+          <div class="gstat-lbl">${s.lbl}</div>
+          <span class="gstat-zone ${zc}">${s.zone}</span>
+        </div>
+        <div class="gstat-val">${s.real||s.v.toFixed(1)}<span style="font-family:var(--f-mono);font-size:.55rem;color:var(--text3);margin-left:.15rem">${s.unit}</span></div>
+        <div class="gstat-track"><div class="gstat-fill" style="width:${pct}%;background:${s.col}"></div></div>
+        <div class="gstat-note">Optimal: ${s.optMin.toFixed(1)}–${s.optMax.toFixed(1)}</div>
+      </div>`;
+    }).join('');
+
+    // Insights
+    const si=(id,d)=>{
+      document.getElementById('i'+id).className='icard '+d.col;
+      document.getElementById('ic'+id).textContent=d.cause;
+      document.getElementById('it'+id).textContent=d.title;
+      document.getElementById('ib'+id).innerHTML=d.body;
+      document.getElementById('ia'+id).innerHTML=d.action;
+    };
+    si('O',ins.o);si('Ph',ins.ph);si('H',ins.h);si('C',ins.comb);
+
+    // Risk
+    document.getElementById('rGrid').innerHTML=risks.map(r=>{
+      const c=r.lv==='Elevated'?'relv':r.lv==='Moderate'?'rmod':'rlow';
+      return`<div class="rcell"><div class="rlbl">${r.l}</div><div class="rlevel ${c}"><div class="rdot"></div>${r.lv}</div><div class="rnote">${r.n}</div></div>`;
+    }).join('');
+
+    // Barrier
+    document.getElementById('bStatus').textContent=(barrier>=75?'Healthy':barrier>=50?'Mildly Stressed':'Compromised')+' Barrier';
+    document.getElementById('bPhase').textContent=`Phase ${ph2.n} · ${ph2.nm}`;
+    document.getElementById('bDesc').textContent=barrier>=75
+      ?'Acid mantle and lipid matrix functioning within range. Barrier maintains its protective film. Focus: optimisation and long-term actives.'
+      :barrier>=50?'Some acid mantle disruption detected. Barrier intact but under-resourced. Supportive ingredients before actives.'
+      :'Significant barrier disruption. TEWL elevated. Ceramide-only protocol until integrity >60%.';
+    document.getElementById('gPct').textContent=barrier+'%';
+    const arc=document.getElementById('gArc');
+    arc.setAttribute('stroke',barrier>=75?CM.g:barrier>=50?CM.a:CM.r);
+    setTimeout(()=>{arc.style.strokeDashoffset=(314-314*barrier/100).toFixed(1);},580);
+
+    // Stab row
+    document.getElementById('stabRow').innerHTML=[
+      {lbl:'Hydration Score',val:Math.round(h/5*100)+'%',bar:Math.round(h/5*100),note:hA.lv,col:CM[hA.col]},
+      {lbl:'Sebum Load',val:Math.round(o/5*100)+'%',bar:Math.round(o/5*100),note:oA.lv,col:CM[oA.col]},
+      {lbl:'Stability Index',val:stab,bar:stab,note:stab>=70?'Stable':stab>=45?'Moderate tension':'Volatile',col:stab>=70?CM.g:stab>=45?CM.a:CM.r},
+    ].map(s=>`<div class="scell"><div class="slbl">${s.lbl}</div><div class="strack"><div class="sfill" style="width:${s.bar}%;background:${s.col}"></div></div><div class="sval">${s.val}</div><div class="snote">${s.note}</div></div>`).join('');
+
+    // Phases
+    const phD=[{n:1,nm:'Barrier Repair',wk:'Weeks 1–6',d:'Ceramides, glycerin, panthenol only.'},{n:2,nm:'Optimisation',wk:'Weeks 6–16',d:'Introduce targeted actives carefully.'},{n:3,nm:'Maintenance',wk:'Ongoing',d:'Retinoids, antioxidants, SPF.'}];
+    document.getElementById('pStrip').innerHTML=phD.map(p=>`<div class="pcard ${p.n===ph2.n?'curr':p.n>ph2.n?'fut':''}">${p.n===ph2.n?'<div class="pcurr">Current</div>':''}<div class="pnum">Phase ${p.n}</div><div class="pname">${p.nm}</div><div class="pwks">${p.wk}</div><div class="pdesc">${p.d}</div></div>`).join('');
+
+    // Conflicts
+    const cp=document.getElementById('cPanel');
+    if(routine.conflicts.length){cp.classList.add('on');document.getElementById('cList').innerHTML=routine.conflicts.map(c=>`<div class="citem">${c}</div>`).join('');}
+
+    // Routine
+    renderSteps('amSteps',routine.amMap.minimal);
+    renderSteps('pmSteps',routine.pmMap.minimal);
+    renderWeekly(routine.weekly);
+
+    // Summary
+    document.getElementById('sumTitle').innerHTML=`Your skin is <em>${type.toLowerCase()}</em>, with ${conds[0].toLowerCase()} tendencies and a ${barrier>=75?'healthy':barrier>=50?'mildly stressed':'compromised'} barrier.`;
+    document.getElementById('sumGrid').innerHTML=[
+      {lbl:'Skin type',val:type,note:`O ${o.toFixed(1)} · H ${h.toFixed(1)}`},
+      {lbl:'pH status',val:phA.lv,note:`${ph.toFixed(1)} — ${phA.st}`},
+      {lbl:'Conditions',val:conds.join(', '),note:'Combined parameter analysis'},
+      {lbl:'Barrier',val:barrier+'%',note:barrier>=75?'Healthy':barrier>=50?'Mildly stressed':'Compromised'},
+      {lbl:'Phase',val:ph2.nm,note:ph2.wk},
+      {lbl:'Priority',val:barrier<60?'Barrier restoration':o>=3.6?'Sebum regulation':h<=2.0?'Hydration recovery':'Maintenance + actives',note:'Primary protocol target'},
+    ].map(c=>`<div class="sg-cell"><div class="sg-lbl">${c.lbl}</div><div class="sg-val">${c.val}</div><div class="sg-note">${c.note}</div></div>`).join('');
+
+    // Observers
+    const io=new IntersectionObserver(en=>{en.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')});},{threshold:.08});
+    document.querySelectorAll('.icard,.rev').forEach(el=>io.observe(el));
+    window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',scrollY>20),{passive:true});
+  },680);
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const p=parseURL();if(p)boot(p);
+});
+</script>
+</body>
+</html>
