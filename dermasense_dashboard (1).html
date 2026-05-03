@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DermaSense · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f2ee;
+  --bg2: #eceae4;
+  --bg3: #e2dfd7;
+  --surface: #faf9f6;
+  --surface2: #f0ede7;
+  --ink: #141210;
+  --text: #2c2820;
+  --text2: #5a5248;
+  --text3: #9a9088;
+  --g1: #1c3828;
+  --g2: #2d5a40;
+  --g3: #3d7a56;
+  --lime: #b8f060;
+  --lime-dim: rgba(184,240,96,.15);
+  --lime-glow: rgba(184,240,96,.3);
+  --warm: #c8845a;
+  --warm-dim: rgba(200,132,90,.12);
+  --cool: #5888a8;
+  --cool-dim: rgba(88,136,168,.12);
+  --neutral: #8888a0;
+  --border: rgba(20,18,16,.07);
+  --border2: rgba(20,18,16,.12);
+  --sh1: 0 1px 8px rgba(16,12,8,.06);
+  --sh2: 0 4px 24px rgba(16,12,8,.09);
+  --sh3: 0 12px 48px rgba(16,12,8,.13);
+  --r: 10px; --r2: 16px; --r3: 24px;
+  --f-serif: 'Instrument Serif', serif;
+  --f-ui: 'Geist', sans-serif;
+  --f-mono: 'Geist Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--f-ui); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; outline: none; }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  height: 52px;
+  background: rgba(244,242,238,.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem;
+  transition: box-shadow .3s;
+}
+.nav.shadow { box-shadow: var(--sh1); }
+.nav-brand {
+  font-family: var(--f-serif); font-size: 1.1rem;
+  color: var(--g1); letter-spacing: .01em;
+  display: flex; align-items: center; gap: .5rem;
+}
+.nav-pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--lime); box-shadow: 0 0 8px var(--lime-glow);
+  animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+.nav-date { font-family: var(--f-mono); font-size: .58rem; letter-spacing: .1em; color: var(--text3); }
+.nav-right { display: flex; align-items: center; gap: .6rem; }
+
+/* Auth UI */
+.auth-area { display: flex; align-items: center; gap: .5rem; }
+.auth-name {
+  font-family: var(--f-mono); font-size: .56rem; letter-spacing: .05em; color: var(--text2);
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.auth-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--border2); object-fit: cover;
+  flex-shrink: 0;
+}
+.auth-avatar-placeholder {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bg2); border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .6rem; color: var(--text3); flex-shrink: 0;
+}
+
+.nav-btn {
+  font-family: var(--f-mono); font-size: .56rem; letter-spacing: .06em;
+  padding: .28rem .7rem; border-radius: 20px;
+  border: 1px solid var(--border2); color: var(--text2);
+  transition: all .18s; white-space: nowrap;
+}
+.nav-btn:hover { background: var(--bg2); color: var(--text); }
+.nav-btn.primary {
+  background: var(--g1); color: #fff; border-color: var(--g1);
+}
+.nav-btn.primary:hover { background: var(--g2); border-color: var(--g2); }
+.nav-btn.scan-btn {
+  background: var(--lime-dim); color: var(--g2);
+  border-color: rgba(184,240,96,.35);
+}
+.nav-btn.scan-btn:hover { background: rgba(184,240,96,.25); }
+
+/* ── MAIN GRID ── */
+.grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1px;
+  background: var(--border);
+  min-height: calc(100vh - 52px);
+}
+
+/* ── LEFT COLUMN ── */
+.col-left {
+  background: var(--surface);
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+
+/* ── EMPTY / AUTH STATE ── */
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 3rem 2rem; text-align: center; gap: 1rem;
+}
+.empty-icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg2); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; margin-bottom: .5rem;
+}
+.empty-title {
+  font-family: var(--f-serif); font-size: 1.5rem; color: var(--ink);
+  line-height: 1.2; margin-bottom: .2rem;
+}
+.empty-sub {
+  font-size: .74rem; color: var(--text3); line-height: 1.6;
+  max-width: 240px;
+}
+.empty-action {
+  margin-top: .5rem; padding: .6rem 1.4rem;
+  background: var(--g1); color: #fff; border-radius: 24px;
+  font-size: .74rem; font-weight: 500; transition: all .2s;
+  display: inline-flex; align-items: center; gap: .4rem;
+}
+.empty-action:hover { background: var(--g2); transform: translateY(-1px); box-shadow: var(--sh2); }
+
+/* ── STATE HERO ── */
+.state-hero {
+  padding: 2.5rem 2rem 2rem;
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.state-hero::before {
+  content: ''; position: absolute;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(184,240,96,.07), transparent 70%);
+  top: -40px; right: -40px;
+}
+.state-kicker {
+  font-family: var(--f-mono); font-size: .54rem; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--text3);
+  display: flex; align-items: center; gap: .5rem; margin-bottom: .9rem;
+}
+.state-kicker::before { content: ''; width: 12px; height: 1px; background: var(--text3); }
+.state-type {
+  font-family: var(--f-serif); font-size: 2.8rem; line-height: .96;
+  color: var(--ink); letter-spacing: -.01em; margin-bottom: .75rem;
+}
+.state-type em { font-style: italic; color: var(--g2); }
+.state-insight {
+  font-size: .78rem; line-height: 1.65; color: var(--text2);
+  padding: .6rem .9rem; background: var(--bg);
+  border-radius: var(--r); border-left: 2px solid var(--lime);
+  margin-bottom: 1rem;
+}
+.state-meta { display: flex; gap: .6rem; flex-wrap: wrap; }
+.meta-pill {
+  font-family: var(--f-mono); font-size: .54rem; letter-spacing: .07em;
+  padding: .2rem .65rem; border-radius: 20px;
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text2);
+}
+.meta-pill.active { background: var(--lime-dim); border-color: rgba(184,240,96,.3); color: var(--g2); }
+
+/* ── RING SECTION ── */
+.ring-section {
+  padding: 2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+}
+.ring-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
+.ring-svg { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--bg2); stroke-width: 8; }
+.ring-prog {
+  fill: none; stroke-width: 8; stroke-linecap: round;
+  stroke-dasharray: 408; stroke-dashoffset: 408;
+  transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1) .3s, stroke .4s ease;
+}
+.ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .1rem;
+}
+.ring-days { font-family: var(--f-serif); font-size: 2.4rem; color: var(--ink); line-height: 1; }
+.ring-lbl { font-family: var(--f-mono); font-size: .52rem; letter-spacing: .1em; color: var(--text3); }
+.ring-text { text-align: center; }
+.ring-main { font-size: .82rem; font-weight: 500; color: var(--text); margin-bottom: .2rem; }
+.ring-sub { font-family: var(--f-mono); font-size: .56rem; color: var(--text3); }
+.ring-state-badge {
+  font-family: var(--f-mono); font-size: .54rem; letter-spacing: .07em;
+  padding: .22rem .7rem; border-radius: 20px;
+  display: inline-block;
+}
+.rs-normal { background: var(--lime-dim); color: var(--g2); border: 1px solid rgba(184,240,96,.28); }
+.rs-near   { background: rgba(200,132,90,.12); color: #7a3a10; border: 1px solid rgba(200,132,90,.28); }
+.rs-due    { background: rgba(88,136,168,.12); color: #1e4060; border: 1px solid rgba(88,136,168,.28); }
+.rs-overdue{ background: rgba(168,56,56,.1); color: #882828; border: 1px solid rgba(168,56,56,.24); }
+
+/* ── WEEK NAV ── */
+.week-nav {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.week-nav-label {
+  font-family: var(--f-mono); font-size: .52rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text3); margin-bottom: .75rem;
+}
+.week-pills { display: flex; gap: .4rem; }
+.wpill {
+  flex: 1; padding: .5rem .3rem; border-radius: var(--r);
+  border: 1px solid var(--border2);
+  background: var(--surface2); cursor: pointer;
+  transition: all .2s ease; text-align: center;
+}
+.wpill:hover { background: var(--bg2); }
+.wpill.active { background: var(--g1); border-color: var(--g1); }
+.wpill-num {
+  font-family: var(--f-mono); font-size: .5rem; letter-spacing: .08em;
+  color: var(--text3); margin-bottom: .18rem; transition: color .2s;
+}
+.wpill.active .wpill-num { color: var(--lime); }
+.wpill-name { font-size: .65rem; font-weight: 500; color: var(--text2); transition: color .2s; }
+.wpill.active .wpill-name { color: #fff; }
+.wpill-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--border2); margin: .3rem auto 0; transition: background .2s;
+}
+.wpill.active .wpill-dot { background: var(--lime); }
+
+/* ── WEEK DETAIL ── */
+.week-detail { flex: 1; padding: 1.75rem 2rem; overflow-y: auto; }
+.wd-header { margin-bottom: 1.25rem; }
+.wd-week { font-family: var(--f-mono); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; color: var(--text3); margin-bottom: .3rem; }
+.wd-title { font-family: var(--f-serif); font-size: 1.6rem; color: var(--ink); }
+.wd-desc { font-size: .74rem; line-height: 1.68; color: var(--text2); margin-bottom: 1.25rem; }
+
+.routine-block { margin-bottom: 1rem; }
+.rb-head {
+  display: flex; align-items: center; gap: .5rem; cursor: pointer;
+  padding: .6rem .75rem; border-radius: var(--r);
+  background: var(--bg); border: 1px solid var(--border);
+  margin-bottom: .4rem; transition: background .18s;
+  justify-content: space-between;
+}
+.rb-head:hover { background: var(--bg2); }
+.rb-head-left { display: flex; align-items: center; gap: .5rem; }
+.rb-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.rb-label { font-family: var(--f-mono); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text2); font-weight: 500; }
+.rb-chevron { font-size: .5rem; color: var(--text3); transition: transform .22s; }
+.rb-head.open .rb-chevron { transform: rotate(180deg); }
+.rb-body { display: none; padding: .75rem .85rem; background: var(--surface2); border-radius: var(--r); border: 1px solid var(--border); }
+.rb-head.open + .rb-body { display: block; }
+.rb-item { display: flex; gap: .6rem; align-items: flex-start; padding: .4rem 0; border-bottom: 1px solid var(--border); }
+.rb-item:last-child { border-bottom: none; }
+.rb-item-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--g3); margin-top: 6px; flex-shrink: 0; }
+.rb-item-text { font-size: .72rem; line-height: 1.55; color: var(--text2); }
+.rb-item-text strong { color: var(--text); font-weight: 500; }
+
+.avoid-block { padding: .7rem .85rem; background: rgba(168,56,56,.04); border: 1px solid rgba(168,56,56,.12); border-radius: var(--r); margin-bottom: .75rem; }
+.avoid-label { font-family: var(--f-mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: #882828; margin-bottom: .35rem; }
+.avoid-item { font-size: .7rem; color: var(--text2); line-height: 1.55; display: flex; gap: .5rem; }
+.avoid-item::before { content: '—'; color: #aa3838; flex-shrink: 0; }
+
+.expect-block { padding: .7rem .85rem; background: var(--lime-dim); border: 1px solid rgba(184,240,96,.25); border-radius: var(--r); }
+.expect-label { font-family: var(--f-mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--g2); margin-bottom: .35rem; }
+.expect-text { font-size: .72rem; color: var(--g1); line-height: 1.55; }
+
+/* ── RIGHT COLUMN ── */
+.col-right { background: var(--bg); display: flex; flex-direction: column; overflow-y: auto; }
+
+/* ── EMPTY RIGHT ── */
+.empty-right {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 3rem;
+}
+.empty-right-inner {
+  text-align: center; max-width: 320px;
+}
+.empty-right-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; margin: 0 auto 1.25rem; 
+}
+.empty-right-title {
+  font-family: var(--f-serif); font-size: 1.8rem; color: var(--ink);
+  margin-bottom: .5rem; line-height: 1.15;
+}
+.empty-right-sub {
+  font-size: .76rem; color: var(--text3); line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+.empty-right-cta {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: var(--g1); color: #fff; padding: .65rem 1.5rem;
+  border-radius: 24px; font-size: .76rem; font-weight: 500;
+  transition: all .2s; text-decoration: none;
+}
+.empty-right-cta:hover { background: var(--g2); transform: translateY(-1px); box-shadow: var(--sh2); }
+
+/* ── GRAPH ── */
+.graph-area { padding: 2.5rem 2.5rem 2rem; border-bottom: 1px solid var(--border); background: var(--surface); }
+.graph-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+.graph-kicker { font-family: var(--f-mono); font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text3); margin-bottom: .4rem; display: flex; align-items: center; gap: .5rem; }
+.graph-kicker::before { content: ''; width: 10px; height: 1px; background: var(--text3); }
+.graph-title { font-family: var(--f-serif); font-size: 1.7rem; color: var(--ink); }
+.graph-legend { display: flex; gap: 1rem; margin-top: .25rem; }
+.gl { display: flex; align-items: center; gap: .35rem; font-family: var(--f-mono); font-size: .54rem; color: var(--text3); }
+.gl-dot { width: 8px; height: 3px; border-radius: 4px; }
+.graph-container { position: relative; }
+#graphCanvas { display: block; width: 100%; border-radius: var(--r); }
+.graph-tooltip {
+  position: absolute; background: var(--g1); color: #fff;
+  padding: .4rem .7rem; border-radius: var(--r); font-family: var(--f-mono);
+  font-size: .58rem; pointer-events: none; opacity: 0; transition: opacity .15s;
+  white-space: nowrap; z-index: 10;
+}
+.graph-scan-count {
+  font-family: var(--f-mono); font-size: .54rem; color: var(--text3);
+  margin-top: .6rem; text-align: right;
+}
+
+/* ── CHANGE INSIGHTS ── */
+.insights-area { padding: 2rem 2.5rem; border-bottom: 1px solid var(--border); background: var(--surface); }
+.ia-header { margin-bottom: 1.25rem; }
+.ia-kicker { font-family: var(--f-mono); font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text3); display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+.ia-kicker::before { content: ''; width: 10px; height: 1px; background: var(--text3); }
+.ia-title { font-family: var(--f-serif); font-size: 1.5rem; color: var(--ink); }
+.ia-no-prev { font-size: .74rem; color: var(--text3); padding: 1rem; background: var(--bg); border-radius: var(--r); border: 1px dashed var(--border2); text-align: center; }
+
+.insight-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+.irow {
+  padding: 1.1rem 1.25rem; border-radius: var(--r2);
+  background: var(--bg); border: 1px solid var(--border);
+  cursor: default; transition: transform .2s ease, box-shadow .2s ease;
+  position: relative; overflow: hidden;
+}
+.irow:hover { transform: translateY(-2px); box-shadow: var(--sh2); }
+.irow::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: var(--r2) var(--r2) 0 0; }
+.irow.pos::before { background: linear-gradient(90deg, var(--g3), var(--lime)); }
+.irow.neg::before { background: linear-gradient(90deg, var(--warm), #e8a878); }
+.irow.neu::before { background: linear-gradient(90deg, var(--cool), #90c0e0); }
+.irow-lbl { font-family: var(--f-mono); font-size: .52rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text3); margin-bottom: .4rem; }
+.irow-change { display: flex; align-items: baseline; gap: .35rem; margin-bottom: .2rem; }
+.irow-delta { font-family: var(--f-serif); font-size: 1.8rem; line-height: 1; }
+.irow.pos .irow-delta { color: var(--g2); }
+.irow.neg .irow-delta { color: var(--warm); }
+.irow.neu .irow-delta { color: var(--cool); }
+.irow-arrow { font-size: .7rem; }
+.irow.pos .irow-arrow { color: var(--g3); }
+.irow.neg .irow-arrow { color: var(--warm); }
+.irow.neu .irow-arrow { color: var(--cool); }
+.irow-note { font-size: .68rem; color: var(--text2); line-height: 1.5; }
+
+/* ── JOURNEY ── */
+.journey-area { padding: 2rem 2.5rem; flex: 1; }
+.ja-kicker { font-family: var(--f-mono); font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text3); display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+.ja-kicker::before { content: ''; width: 10px; height: 1px; background: var(--text3); }
+.ja-title { font-family: var(--f-serif); font-size: 1.5rem; color: var(--ink); margin-bottom: 1.5rem; }
+
+.timeline { position: relative; padding-left: 1.5rem; }
+.timeline::before {
+  content: ''; position: absolute;
+  left: 6px; top: 8px; bottom: 8px; width: 1px;
+  background: linear-gradient(to bottom, var(--g3), var(--lime), var(--bg3));
+}
+.tl-item {
+  position: relative; margin-bottom: 1.25rem;
+  opacity: 0; transform: translateX(-8px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.tl-item.vis { opacity: 1; transform: translateX(0); }
+.tl-dot {
+  position: absolute; left: -1.5rem; top: 5px;
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--g3); background: var(--surface);
+}
+.tl-item.current .tl-dot { background: var(--lime); border-color: var(--lime); box-shadow: 0 0 10px var(--lime-glow); }
+.tl-item.future .tl-dot { border-color: var(--bg3); background: var(--bg); }
+.tl-date { font-family: var(--f-mono); font-size: .52rem; letter-spacing: .1em; color: var(--text3); margin-bottom: .18rem; }
+.tl-state { font-size: .76rem; font-weight: 500; color: var(--text); margin-bottom: .1rem; }
+.tl-item.current .tl-state { color: var(--g2); }
+.tl-item.future .tl-state { color: var(--text3); }
+.tl-note { font-size: .66rem; color: var(--text3); line-height: 1.5; }
+.tl-now {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-family: var(--f-mono); font-size: .5rem; letter-spacing: .08em;
+  background: var(--lime-dim); color: var(--g2); padding: .15rem .5rem;
+  border-radius: 8px; border: 1px solid rgba(184,240,96,.3); margin-left: .4rem;
+}
+
+/* ── SCROLL REVEAL ── */
+.rev { opacity: 0; transform: translateY(10px); transition: opacity .55s ease, transform .55s ease; }
+.rev.vis { opacity: 1; transform: translateY(0); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--g1); color: #fff;
+  padding: .6rem 1.25rem; border-radius: 24px;
+  font-family: var(--f-mono); font-size: .62rem; letter-spacing: .05em;
+  box-shadow: var(--sh3); z-index: 999;
+  transition: transform .4s cubic-bezier(.16,1,.3,1);
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── FIREBASE LOADING ── */
+.fb-loading {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: .75rem;
+  transition: opacity .4s ease;
+}
+.fb-loading.done { opacity: 0; pointer-events: none; }
+.fb-spinner {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--bg2); border-top-color: var(--g2);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.fb-loading-text { font-family: var(--f-mono); font-size: .58rem; color: var(--text3); }
+
+/* ── MOBILE ── */
+@media (max-width: 800px) {
+  .grid { grid-template-columns: 1fr; }
+  .col-left { border-right: none; border-bottom: 1px solid var(--border); }
+  .insight-row { grid-template-columns: 1fr; }
+  .graph-area, .insights-area, .journey-area { padding: 1.75rem; }
+  .state-hero, .ring-section, .week-nav, .week-detail { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .nav { padding: 0 1.25rem; }
+  .nav-date { display: none; }
+  .auth-name { display: none; }
+}
+@media (max-width: 420px) {
+  .insight-row { grid-template-columns: 1fr; }
+  .state-type { font-size: 2.2rem; }
+  .ring-section { padding: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div class="fb-loading" id="fbLoading">
+  <div class="nav-brand" style="font-family:var(--f-serif);font-size:1.1rem;color:var(--g1);letter-spacing:.01em;display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+    <div class="nav-pulse" style="width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px rgba(184,240,96,.3);animation:pulse 2.5s ease-in-out infinite;"></div>DermaSense
+  </div>
+  <div class="fb-spinner"></div>
+  <div class="fb-loading-text">Initialising...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-brand"><div class="nav-pulse"></div>DermaSense</div>
+  <div class="nav-date" id="navDate"></div>
+  <div class="nav-right">
+    <!-- logged out -->
+    <div id="authLoggedOut" style="display:none">
+      <button class="nav-btn primary" onclick="signInWithGoogle()">Login with Google</button>
+    </div>
+    <!-- logged in -->
+    <div class="auth-area" id="authLoggedIn" style="display:none">
+      <div class="auth-avatar-placeholder" id="authAvatar">?</div>
+      <span class="auth-name" id="authName"></span>
+      <button class="nav-btn" onclick="signOut()">Logout</button>
+    </div>
+    <button class="nav-btn scan-btn" onclick="goToScan()" id="newScanBtn" style="display:none">↺ New scan</button>
+  </div>
+</nav>
+
+<!-- MAIN GRID -->
+<div class="grid">
+  <!-- LEFT -->
+  <div class="col-left" id="colLeft">
+    <!-- Empty: not logged in -->
+    <div class="empty-state" id="emptyAuth">
+      <div class="empty-icon">🔒</div>
+      <div class="empty-title">Track your skin</div>
+      <div class="empty-sub">Login to sync your scan history and get personalised 28-day protocols.</div>
+      <button class="empty-action" onclick="signInWithGoogle()">Login with Google</button>
+    </div>
+
+    <!-- Empty: logged in, no scans -->
+    <div class="empty-state" id="emptyNoScans" style="display:none">
+      <div class="empty-icon">🌿</div>
+      <div class="empty-title">No scans yet</div>
+      <div class="empty-sub">Scan your skin to begin tracking your 28-day cycle and personalised protocol.</div>
+      <button class="empty-action" onclick="goToScan()">Scan your skin</button>
+    </div>
+
+    <!-- Populated left column content -->
+    <div id="leftContent" style="display:none; flex-direction:column; flex:1;">
+      <!-- STATE -->
+      <div class="state-hero">
+        <div class="state-kicker">Current skin state</div>
+        <div class="state-type" id="stateType">—</div>
+        <div class="state-insight" id="stateInsight">—</div>
+        <div class="state-meta" id="stateMeta"></div>
+      </div>
+
+      <!-- RING -->
+      <div class="ring-section">
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="160" height="160" viewBox="0 0 160 160">
+            <circle class="ring-track" cx="80" cy="80" r="65"/>
+            <circle class="ring-prog" id="ringProg" cx="80" cy="80" r="65" stroke="#b8f060"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-days" id="ringDays">—</div>
+            <div class="ring-lbl" id="ringLbl">days</div>
+          </div>
+        </div>
+        <div class="ring-text">
+          <div class="ring-main" id="ringMain">—</div>
+          <div class="ring-sub" id="ringSub">28-day skin cycle</div>
+          <div style="margin-top:.5rem"><span class="ring-state-badge rs-normal" id="ringBadge">—</span></div>
+        </div>
+      </div>
+
+      <!-- WEEK NAV -->
+      <div class="week-nav">
+        <div class="week-nav-label">4-week protocol</div>
+        <div class="week-pills" id="weekPills"></div>
+      </div>
+
+      <!-- WEEK DETAIL -->
+      <div class="week-detail" id="weekDetail"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="col-right" id="colRight">
+    <!-- Empty right when no data -->
+    <div class="empty-right" id="emptyRight">
+      <div class="empty-right-inner">
+        <div class="empty-right-icon">📊</div>
+        <div class="empty-right-title">Your data will<br><em style="font-family:var(--f-serif);font-style:italic;color:var(--g2)">appear here</em></div>
+        <div class="empty-right-sub">After your first scan, this dashboard will show your skin trends, parameter comparisons, and personalised timeline.</div>
+      </div>
+    </div>
+
+    <!-- Populated right column content -->
+    <div id="rightContent" style="display:none; flex-direction:column; flex:1;">
+      <!-- GRAPH -->
+      <div class="graph-area rev" id="graphArea">
+        <div class="graph-header">
+          <div>
+            <div class="graph-kicker">Scan history</div>
+            <div class="graph-title">Skin parameter trends</div>
+          </div>
+          <div>
+            <div class="graph-legend">
+              <div class="gl"><div class="gl-dot" style="background:var(--g3)"></div>Oil</div>
+              <div class="gl"><div class="gl-dot" style="background:var(--cool)"></div>Hydration</div>
+              <div class="gl"><div class="gl-dot" style="background:var(--neutral)"></div>pH</div>
+            </div>
+          </div>
+        </div>
+        <div class="graph-container">
+          <canvas id="graphCanvas" height="220"></canvas>
+          <div class="graph-tooltip" id="tooltip"></div>
+        </div>
+        <div class="graph-scan-count" id="graphScanCount"></div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="insights-area rev" id="insightsArea">
+        <div class="ia-header">
+          <div class="ia-kicker">Scan comparison</div>
+          <div class="ia-title">What changed</div>
+        </div>
+        <div id="insightRow"></div>
+      </div>
+
+      <!-- JOURNEY -->
+      <div class="journey-area rev" id="journeyArea">
+        <div class="ja-kicker">Scan history</div>
+        <div class="ja-title">Your skin journey</div>
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK (modular compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// FIREBASE CONFIG
+// Replace with your actual Firebase project config
+// ════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// ── INIT ──────────────────────────────────────────────────
+let app, auth, db;
+let currentUser = null;
+let allScans = [];
+let SCAN = null;
+let activeWeek = 1;
+
+function initFirebase() {
+  try {
+    app = firebase.initializeApp(FIREBASE_CONFIG);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(async (user) => {
+      currentUser = user;
+      if (user) {
+        updateAuthUI(user);
+        await checkLocalScanAndSave(user);
+        await loadUserScans(user.uid);
+      } else {
+        updateAuthUI(null);
+        renderEmptyState('not-logged-in');
+      }
+      hideFbLoading();
+    });
+  } catch (err) {
+    console.error('Firebase init error:', err);
+    // Graceful degradation: show localStorage-based view
+    hideFbLoading();
+    loadFromLocalStorage();
+  }
+}
+
+function hideFbLoading() {
+  const el = document.getElementById('fbLoading');
+  el.classList.add('done');
+  setTimeout(() => el.remove(), 500);
+}
+
+// ── AUTH ──────────────────────────────────────────────────
+function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => {
+    console.error('Sign-in error:', err);
+    showToast('Login failed. Please try again.');
+  });
+}
+
+function signOut() {
+  auth.signOut().then(() => {
+    allScans = [];
+    SCAN = null;
+    currentUser = null;
+    renderEmptyState('not-logged-in');
+    updateAuthUI(null);
+    showToast('Logged out.');
+  });
+}
+
+function updateAuthUI(user) {
+  const loggedOut = document.getElementById('authLoggedOut');
+  const loggedIn = document.getElementById('authLoggedIn');
+  const newScanBtn = document.getElementById('newScanBtn');
+
+  if (user) {
+    loggedOut.style.display = 'none';
+    loggedIn.style.display = 'flex';
+    newScanBtn.style.display = '';
+
+    const nameEl = document.getElementById('authName');
+    const avatarEl = document.getElementById('authAvatar');
+    nameEl.textContent = user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'You';
+
+    if (user.photoURL) {
+      avatarEl.outerHTML = `<img class="auth-avatar" id="authAvatar" src="${user.photoURL}" alt="">`;
+    } else {
+      avatarEl.textContent = (user.displayName || user.email || '?')[0].toUpperCase();
+    }
+  } else {
+    loggedOut.style.display = '';
+    loggedIn.style.display = 'none';
+    newScanBtn.style.display = 'none';
+  }
+}
+
+// ── LOCAL → FIREBASE SYNC ─────────────────────────────────
+async function checkLocalScanAndSave(user) {
+  const raw = localStorage.getItem('latestScan');
+  if (!raw) return;
+  try {
+    const scan = JSON.parse(raw);
+    if (!scan.o || !scan.ph || !scan.h) return;
+    // Validate & normalise
+    const entry = {
+      o:    Math.min(5, Math.max(0, parseFloat(scan.o))),
+      ph:   Math.min(7.5, Math.max(3, parseFloat(scan.ph))),
+      h:    Math.min(5, Math.max(0, parseFloat(scan.h))),
+      time: scan.time || Date.now(),
+    };
+    await db.collection('users').doc(user.uid).collection('scans').add(entry);
+    localStorage.removeItem('latestScan');
+    showToast('Scan synced to your account.');
+  } catch (err) {
+    console.error('Sync error:', err);
+  }
+}
+
+// ── LOAD USER SCANS ───────────────────────────────────────
+async function loadUserScans(uid) {
+  try {
+    const snap = await db.collection('users').doc(uid).collection('scans')
+      .orderBy('time', 'asc').get();
+    allScans = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (allScans.length === 0) {
+      renderEmptyState('no-scans');
+    } else {
+      renderAll();
+    }
+  } catch (err) {
+    console.error('Load error:', err);
+    renderEmptyState('no-scans');
+  }
+}
+
+// ── FALLBACK: LOCAL STORAGE ────────────────────────────────
+function loadFromLocalStorage() {
+  const raw = localStorage.getItem('latestScan');
+  if (raw) {
+    try {
+      const scan = JSON.parse(raw);
+      if (scan.o && scan.ph && scan.h) {
+        allScans = [{ ...scan, time: scan.time || Date.now() }];
+        renderAll();
+        return;
+      }
+    } catch (e) {}
+  }
+  renderEmptyState('not-logged-in');
+}
+
+// ── EMPTY STATE ROUTER ────────────────────────────────────
+function renderEmptyState(state) {
+  document.getElementById('emptyAuth').style.display    = state === 'not-logged-in' ? '' : 'none';
+  document.getElementById('emptyNoScans').style.display = state === 'no-scans'      ? '' : 'none';
+  document.getElementById('leftContent').style.display  = 'none';
+  document.getElementById('emptyRight').style.display   = '';
+  document.getElementById('rightContent').style.display = 'none';
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function goToScan() {
+  window.location.href = 'index.html';
+}
+
+// ── ANALYSIS ──────────────────────────────────────────────
+function analyze(o, ph, h) {
+  const type = o>=3.6&&h<=2.5 ? 'Dehydrated Oily'
+    : o<=1.5&&h<=2.0 ? 'Dry'
+    : o>=3.6&&h>=2.6 ? 'Oily'
+    : o>=2.6&&o<=3.5&&h>=2.6&&ph>=4.5&&ph<=5.5 ? 'Balanced'
+    : o>=2.6&&h<=2.5 ? 'Combination'
+    : 'Normal–Dry';
+
+  const insight = o>=3.6&&h<=2.5
+    ? 'Skin is compensating for water loss by overproducing oil.'
+    : o<=1.5 ? 'Lipid reserves are low — barrier needs structural replenishment.'
+    : ph>6.5 ? 'Alkaline pH is disrupting the acid mantle and slowing barrier repair.'
+    : h<=2.0 ? 'Stratum corneum hydration is below functional threshold.'
+    : ph<4.5 ? 'Surface is over-acidified — a recovery window is needed.'
+    : 'Parameters are in a workable range — focus on maintenance.';
+
+  const conds = [];
+  if(h<=2.5)conds.push('Dehydrated');
+  if(o>=3.6)conds.push('Acne-prone');
+  if(ph>6.5||ph<4.0)conds.push('Barrier-damaged');
+  if(ph<4.5||(h<=1.5&&ph>5.8))conds.push('Sensitive');
+  if(!conds.length)conds.push('Well-balanced');
+
+  const barrier = Math.max(10, Math.min(100, Math.round(
+    100 - (ph<4.5?28:ph>5.5&&ph<=6.5?15:ph>6.5?38:0)
+        - (o<=1.0?22:o<=1.5?12:o>=4.5?10:0)
+        - (h<=1.0?22:h<=2.0?12:0)
+        - (o<=1.5&&h<=1.5?10:0)
+  )));
+
+  return { type, insight, conds, barrier };
+}
+
+// ── WEEK DATA ─────────────────────────────────────────────
+function weekData(week, scan) {
+  const { o, ph, h } = scan;
+  const isOily = o>=3.6, isDry = o<=1.5, isDehy = h<=2.5;
+  const isAlk = ph>6.5;
+
+  const weeks = {
+    1: {
+      name: 'Repair',
+      desc: 'Re-establish the barrier foundation. No actives. Let the skin recalibrate before introducing treatments.',
+      morning: [
+        { label: 'Ceramide milk cleanser', note: 'pH 5.0–5.5 — preserves acid mantle' },
+        { label: isDehy ? 'Multi-weight HA serum' : 'Ceramide + panthenol serum', note: isDehy ? 'Applied to damp skin' : 'Barrier-first formula' },
+        { label: isOily ? 'Oil-free ceramide lotion' : 'Ceramide barrier cream', note: isOily ? 'Non-comedogenic seal' : 'Lipid replenishment' },
+        { label: 'SPF 50+ mineral sunscreen', note: 'UV degrades ceramides — non-negotiable' },
+      ],
+      night: [
+        { label: 'Double-cleanse (if SPF worn)', note: 'Oil cleanser first, then gentle foaming' },
+        { label: isDehy ? 'Glycerin + panthenol recovery serum' : 'Ceramide + linoleic acid serum', note: 'Peak TEWL happens during sleep' },
+        { label: isDry ? 'Occlusive ceramide night cream' : 'Ceramide gel-cream', note: isDry ? 'Heavy occlusion for dry profiles' : 'Non-clogging barrier seal' },
+      ],
+      avoid: ['Retinoids and AHAs/BHAs — too disruptive in week 1', 'Fragrance and essential oils in any formula', 'Exfoliation of any kind'],
+      expect: 'Surface texture may begin to smooth as ceramide levels recover. No dramatic change — this week is about stabilising the baseline.',
+    },
+    2: {
+      name: 'Balance',
+      desc: 'Introduce targeted actives carefully. Maintain the barrier gains from week 1 while beginning to address the specific condition.',
+      morning: [
+        { label: isOily ? 'Low-pH BHA gel cleanser' : 'Amino acid gentle cleanser', note: 'pH 5.0–5.5 maintained' },
+        { label: isAlk ? 'Lactic acid 2% toner' : (isDehy ? 'Multi-weight HA + niacinamide' : 'Niacinamide 5% serum'), note: isAlk ? 'Brings surface pH toward 4.5–5.5' : 'Sebum modulation + hydration' },
+        { label: 'Moisturiser (same as week 1)', note: 'Consistency matters more than novelty' },
+        { label: 'SPF 50+', note: 'Every morning, regardless of conditions' },
+      ],
+      night: [
+        { label: 'Gentle cleanser', note: 'Double-cleanse if SPF worn' },
+        { label: isOily ? 'Azelaic acid 10% or adapalene 0.025%' : 'HA + peptide night serum', note: isOily ? 'Alternate nights to start' : 'Overnight hydration delivery' },
+        { label: 'Night moisturiser', note: 'Slightly richer than AM formula' },
+      ],
+      avoid: ['Layering multiple actives in the same session', 'AHA + retinoid on the same evening', 'Skipping SPF even on cloudy days'],
+      expect: 'Oil levels may begin stabilising. Hydration should feel more consistent. pH deviation should reduce with continued acid mantle support.',
+    },
+    3: {
+      name: 'Optimize',
+      desc: 'The barrier is more stable. Progress actives to full therapeutic dose and introduce antioxidant protection.',
+      morning: [
+        { label: 'Established cleanser', note: 'No changes needed' },
+        { label: 'Vitamin C 10% (L-ascorbic acid)', note: 'Applied AM only — degrades in PM light' },
+        { label: isOily ? 'Niacinamide 10% + zinc PCA' : 'Established serum + peptide booster', note: isOily ? 'Full sebum regulation dose' : 'Collagen-support phase' },
+        { label: 'Moisturiser + SPF 50+', note: 'Mineral hybrid preferred' },
+      ],
+      night: [
+        { label: 'Double-cleanse', note: 'Consistent habit protects the following steps' },
+        { label: isOily ? 'Adapalene 0.1% (graduated dose)' : 'Retinol 0.1% encapsulated', note: 'Full retinoid introduction' },
+        { label: 'Rich barrier cream', note: 'Buffer retinoid irritation' },
+      ],
+      avoid: ['Vitamin C + retinoid same session', 'Introducing new products while increasing actives', 'Over-exfoliating — limit to 1×/week maximum'],
+      expect: 'Skin tone should begin to even. Congestion should be visibly reducing. Hydration readings typically 15–25% above week 1 baseline.',
+    },
+    4: {
+      name: 'Maintain',
+      desc: 'The cycle is complete. Sustain gains, introduce minor refinements, and prepare for the next scan to recalibrate.',
+      morning: [
+        { label: 'Full established routine', note: 'Week 3 protocol maintained' },
+        { label: 'Antioxidant serum (optional boost)', note: 'Resveratrol or vitamin E if tolerated' },
+        { label: 'SPF 50+ — always', note: 'This is the highest-ROI single habit' },
+      ],
+      night: [
+        { label: 'Cleanser + retinoid (3–4×/week)', note: 'Sustainable, not nightly' },
+        { label: 'BHA 1×/week if oily', note: 'Maintenance exfoliation only' },
+        { label: 'Ceramide night cream', note: 'Barrier maintenance continues indefinitely' },
+      ],
+      avoid: ['Disrupting a working routine unnecessarily', 'Starting new actives before next scan', 'Letting SPF slip as weather improves'],
+      expect: 'Skin should be at its most balanced point in the cycle. The next NFC scan will confirm progress and guide the next 4-week plan.',
+    },
+  };
+  return weeks[week];
+}
+
+// ── RING ──────────────────────────────────────────────────
+function renderRing(lastScanTime) {
+  const daysSinceScan = Math.floor((Date.now() - lastScanTime) / 86400000);
+  const daysLeft = Math.max(-999, 28 - daysSinceScan);
+  const pct = Math.max(0, Math.min(1, daysSinceScan / 28));
+  const circumference = 408;
+  const offset = circumference * (1 - pct);
+
+  document.getElementById('ringProg').style.strokeDashoffset = offset;
+
+  let color = '#b8f060';
+  if (daysLeft <= 3 && daysLeft > 0) color = '#c87840';
+  if (daysLeft <= 0) color = '#a03030';
+  document.getElementById('ringProg').setAttribute('stroke', color);
+
+  if (daysLeft > 0) {
+    document.getElementById('ringDays').textContent = daysLeft;
+    document.getElementById('ringLbl').textContent = daysLeft === 1 ? 'day' : 'days';
+    document.getElementById('ringMain').textContent = daysLeft > 7 ? `Next scan in ${daysLeft} days` : 'Scan recommended soon';
+  } else if (daysLeft === 0) {
+    document.getElementById('ringDays').textContent = '0';
+    document.getElementById('ringLbl').textContent = 'days';
+    document.getElementById('ringMain').textContent = "You're ready for your next scan";
+  } else {
+    document.getElementById('ringDays').textContent = Math.abs(daysLeft);
+    document.getElementById('ringLbl').textContent = 'days over';
+    document.getElementById('ringMain').textContent = `Scan overdue by ${Math.abs(daysLeft)} days`;
+  }
+
+  const badge = document.getElementById('ringBadge');
+  if (daysLeft > 7) { badge.textContent = 'On track'; badge.className = 'ring-state-badge rs-normal'; }
+  else if (daysLeft > 0) { badge.textContent = 'Scan soon'; badge.className = 'ring-state-badge rs-near'; }
+  else if (daysLeft === 0) { badge.textContent = 'Ready'; badge.className = 'ring-state-badge rs-due'; }
+  else { badge.textContent = 'Overdue'; badge.className = 'ring-state-badge rs-overdue'; }
+
+  return daysSinceScan;
+}
+
+// ── WEEK PILLS ────────────────────────────────────────────
+function renderWeekPills(currentWeek) {
+  const names = ['Repair', 'Balance', 'Optimize', 'Maintain'];
+  const pills = document.getElementById('weekPills');
+  pills.innerHTML = '';
+  names.forEach((name, i) => {
+    const w = i + 1;
+    const el = document.createElement('div');
+    el.className = 'wpill' + (w === currentWeek ? ' active' : '');
+    el.innerHTML = `<div class="wpill-num">W${w}</div><div class="wpill-name">${name}</div><div class="wpill-dot"></div>`;
+    el.onclick = () => {
+      activeWeek = w;
+      document.querySelectorAll('.wpill').forEach((p, j) => p.classList.toggle('active', j + 1 === w));
+      renderWeekDetail(w, currentWeek);
+    };
+    pills.appendChild(el);
+  });
+}
+
+function renderWeekDetail(w, currentWeek) {
+  if (!SCAN) return;
+  const data = weekData(w, SCAN);
+  const isCurrent = w === currentWeek;
+  const html = `
+    <div class="wd-header">
+      <div class="wd-week">Week ${w}${isCurrent ? ' · current' : w < currentWeek ? ' · completed' : ' · upcoming'}</div>
+      <div class="wd-title">${data.name} Phase</div>
+    </div>
+    <p class="wd-desc">${data.desc}</p>
+    <div class="routine-block">
+      <div class="rb-head" onclick="this.classList.toggle('open')">
+        <div class="rb-head-left"><div class="rb-dot" style="background:#c87840"></div><div class="rb-label">Morning</div></div>
+        <span class="rb-chevron">▾</span>
+      </div>
+      <div class="rb-body">
+        ${data.morning.map(s => `<div class="rb-item"><div class="rb-item-dot"></div><div class="rb-item-text"><strong>${s.label}</strong>${s.note ? ` — ${s.note}` : ''}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="routine-block">
+      <div class="rb-head open" onclick="this.classList.toggle('open')">
+        <div class="rb-head-left"><div class="rb-dot" style="background:#5870a8"></div><div class="rb-label">Evening</div></div>
+        <span class="rb-chevron">▾</span>
+      </div>
+      <div class="rb-body">
+        ${data.night.map(s => `<div class="rb-item"><div class="rb-item-dot"></div><div class="rb-item-text"><strong>${s.label}</strong>${s.note ? ` — ${s.note}` : ''}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="avoid-block">
+      <div class="avoid-label">What to avoid</div>
+      ${data.avoid.map(a => `<div class="avoid-item">${a}</div>`).join('')}
+    </div>
+    <div class="expect-block">
+      <div class="expect-label">Expected change</div>
+      <div class="expect-text">${data.expect}</div>
+    </div>
+  `;
+  document.getElementById('weekDetail').innerHTML = html;
+}
+
+// ── REAL GRAPH FROM SCAN HISTORY ──────────────────────────
+function drawGraph(scans) {
+  const cv = document.getElementById('graphCanvas');
+  if (!cv) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.parentElement.offsetWidth;
+  cv.style.width = W + 'px';
+  cv.width = W * dpr;
+  cv.height = 220 * dpr;
+  cv.style.height = '220px';
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const w = W, h = 220;
+  const pad = { t: 20, r: 20, b: 30, l: 32 };
+  const iW = w - pad.l - pad.r, iH = h - pad.t - pad.b;
+  ctx.clearRect(0, 0, w, h);
+
+  if (scans.length < 1) return;
+
+  // Build time-normalized data
+  // X axis: relative to first scan in days
+  const t0 = scans[0].time;
+  const tLast = scans[scans.length - 1].time;
+  const totalSpan = Math.max(tLast - t0, 86400000); // at least 1 day
+
+  // Normalize pH to 0–5 scale for display
+  const normPh = v => Math.max(0, Math.min(5, (v - 3) / 4.5 * 5));
+
+  const points = scans.map(s => ({
+    x: (s.time - t0) / totalSpan,
+    o: s.o,
+    h: s.h,
+    ph: normPh(s.ph),
+    raw: s,
+  }));
+
+  const toX = t => pad.l + t * iW;
+  const toY = v => pad.t + iH - (Math.max(0, Math.min(5, v)) / 5) * iH;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(20,18,16,.05)'; ctx.lineWidth = 1;
+  [0, 1, 2, 3, 4, 5].forEach(v => {
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(20,18,16,.25)'; ctx.font = `300 9px 'Geist Mono', monospace`;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(v, pad.l - 5, y);
+  });
+
+  // Optimal zone band (2.5–3.5)
+  ctx.fillStyle = 'rgba(184,240,96,.07)';
+  ctx.fillRect(pad.l, toY(3.5), iW, toY(2.5) - toY(3.5));
+
+  // Date axis labels
+  if (scans.length > 1) {
+    const labelCount = Math.min(4, scans.length);
+    const step = Math.floor((scans.length - 1) / (labelCount - 1));
+    for (let i = 0; i < scans.length; i += Math.max(1, step)) {
+      const p = points[i];
+      const x = toX(p.x);
+      const d = new Date(scans[i].time);
+      const lbl = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      ctx.strokeStyle = 'rgba(20,18,16,.05)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, h - pad.b); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(20,18,16,.22)'; ctx.font = `400 8px 'Geist Mono', monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(lbl, x, h - pad.b + 4);
+    }
+  }
+
+  function drawLine(getter, color) {
+    if (points.length === 0) return;
+    const gr = ctx.createLinearGradient(0, pad.t, 0, h - pad.b);
+    gr.addColorStop(0, color + '40');
+    gr.addColorStop(1, color + '00');
+
+    // Fill
+    ctx.beginPath();
+    ctx.moveTo(toX(points[0].x), h - pad.b);
+    points.forEach((p, i) => {
+      const x = toX(p.x), y = toY(getter(p));
+      if (i === 0) { ctx.lineTo(x, y); return; }
+      const px = toX(points[i-1].x), py = toY(getter(points[i-1]));
+      const cx1 = px + (x - px) * 0.5, cy1 = py;
+      const cx2 = px + (x - px) * 0.5, cy2 = y;
+      ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
+    });
+    ctx.lineTo(toX(points[points.length-1].x), h - pad.b);
+    ctx.closePath();
+    ctx.fillStyle = gr; ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const x = toX(p.x), y = toY(getter(p));
+      if (i === 0) { ctx.moveTo(x, y); return; }
+      const px = toX(points[i-1].x), py = toY(getter(points[i-1]));
+      ctx.bezierCurveTo(px + (x-px)*.5, py, px + (x-px)*.5, y, x, y);
+    });
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+
+    // Endpoint dot
+    const last = points[points.length - 1];
+    const lx = toX(last.x), ly = toY(getter(last));
+    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.beginPath(); ctx.arc(lx, ly, 7, 0, Math.PI * 2);
+    ctx.strokeStyle = color + '44'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  drawLine(p => p.o,  '#3d7a56');
+  drawLine(p => p.h,  '#5888a8');
+  drawLine(p => p.ph, '#8888a0');
+
+  // Tooltip on hover
+  const canvas = cv;
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const tt = document.getElementById('tooltip');
+    // Find nearest scan point
+    let nearest = null, minDist = Infinity;
+    points.forEach((p, i) => {
+      const px = toX(p.x);
+      const d = Math.abs(px - mx);
+      if (d < minDist) { minDist = d; nearest = { p, i }; }
+    });
+    if (nearest && minDist < 30) {
+      const { p, i } = nearest;
+      const s = scans[i];
+      const d = new Date(s.time);
+      tt.style.left = toX(p.x) + 'px';
+      tt.style.top = (pad.t - 38) + 'px';
+      tt.style.transform = 'translateX(-50%)';
+      tt.textContent = `${d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · O ${s.o.toFixed(1)} H ${s.h.toFixed(1)} pH ${s.ph.toFixed(1)}`;
+      tt.style.opacity = 1;
+    } else {
+      tt.style.opacity = 0;
+    }
+  };
+  canvas.onmouseleave = () => { document.getElementById('tooltip').style.opacity = 0; };
+
+  // Scan count label
+  const countEl = document.getElementById('graphScanCount');
+  if (countEl) countEl.textContent = `${scans.length} scan${scans.length !== 1 ? 's' : ''} recorded`;
+}
+
+// ── COMPARISON INSIGHTS ───────────────────────────────────
+function renderInsights(latest, prev) {
+  const insightRow = document.getElementById('insightRow');
+  if (!prev) {
+    insightRow.innerHTML = `<div class="ia-no-prev">Complete a second scan to see parameter changes between sessions.</div>`;
+    return;
+  }
+
+  const dO  = ((latest.o  - prev.o)  / prev.o  * 100).toFixed(0);
+  const dPh = (latest.ph - prev.ph).toFixed(2);
+  const dH  = ((latest.h  - prev.h)  / prev.h  * 100).toFixed(0);
+
+  const rows = [
+    {
+      lbl: 'Hydration',
+      delta: (dH >= 0 ? '+' : '') + dH + '%',
+      arrow: dH >= 0 ? '↑' : '↓',
+      cls: dH >= 0 ? 'pos' : 'neg',
+      note: dH >= 0 ? 'Hydration trending upward — NMF levels recovering.' : 'Water content declined. Increase humectant frequency.'
+    },
+    {
+      lbl: 'Oil level',
+      delta: (dO >= 0 ? '+' : '') + dO + '%',
+      arrow: dO > 0 ? '↑' : dO < 0 ? '↓' : '→',
+      cls: dO <= 0 ? 'pos' : dO > 15 ? 'neg' : 'neu',
+      note: dO <= 0 ? 'Sebum stabilising — barrier response improving.' : dO > 15 ? 'Oil levels increased — check barrier disruption.' : 'Oil output within manageable range.'
+    },
+    {
+      lbl: 'pH shift',
+      delta: (parseFloat(dPh) >= 0 ? '+' : '') + dPh,
+      arrow: parseFloat(dPh) > 0 ? '↑' : parseFloat(dPh) < 0 ? '↓' : '→',
+      cls: Math.abs(parseFloat(dPh)) < 0.3 ? 'pos' : parseFloat(dPh) > 0 ? 'neg' : 'neu',
+      note: Math.abs(parseFloat(dPh)) < 0.3 ? 'pH stable — acid mantle holding its range.' : parseFloat(dPh) > 0 ? 'pH drifting alkaline — review cleanser choice.' : 'pH trending toward optimal 4.5–5.5 range.'
+    }
+  ];
+
+  insightRow.innerHTML = `<div class="insight-row">${rows.map(r => `
+    <div class="irow ${r.cls}">
+      <div class="irow-lbl">${r.lbl}</div>
+      <div class="irow-change">
+        <div class="irow-delta">${r.delta}</div>
+        <div class="irow-arrow">${r.arrow}</div>
+      </div>
+      <div class="irow-note">${r.note}</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+// ── TIMELINE FROM REAL SCANS ──────────────────────────────
+function renderTimeline(scans) {
+  const el = document.getElementById('timeline');
+  const now = Date.now();
+
+  const items = scans.map((s, i) => {
+    const isCurrent = i === scans.length - 1;
+    const d = new Date(s.time);
+    const analysis = analyze(s.o, s.ph, s.h);
+    const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: scans.length > 6 ? '2-digit' : undefined });
+    return { s, i, isCurrent, analysis, dateStr };
+  });
+
+  // Also add a future projection point
+  const lastScan = scans[scans.length - 1];
+  const daysSince = Math.floor((now - lastScan.time) / 86400000);
+  const daysLeft = 28 - daysSince;
+
+  let futureHtml = '';
+  if (daysLeft > 0) {
+    const nextDate = new Date(lastScan.time + 28 * 86400000);
+    const nextStr = nextDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    futureHtml = `
+      <div class="tl-item future" style="transition-delay:${items.length * 80}ms">
+        <div class="tl-dot"></div>
+        <div class="tl-date">${nextStr} · projected</div>
+        <div class="tl-state">Next scan due</div>
+        <div class="tl-note">Full cycle complete — rescan to recalibrate your protocol.</div>
+      </div>
+    `;
+  }
+
+  el.innerHTML = items.map(({ s, i, isCurrent, analysis, dateStr }) => `
+    <div class="tl-item ${isCurrent ? 'current' : 'past'}" style="transition-delay:${i * 80}ms">
+      <div class="tl-dot"></div>
+      <div class="tl-date">${dateStr}</div>
+      <div class="tl-state">${analysis.type}${isCurrent ? '<span class="tl-now">now</span>' : ''}</div>
+      <div class="tl-note">O ${s.o.toFixed(1)} · H ${s.h.toFixed(1)} · pH ${s.ph.toFixed(1)} · Barrier ${analysis.barrier}%</div>
+    </div>
+  `).join('') + futureHtml;
+
+  setTimeout(() => {
+    document.querySelectorAll('.tl-item').forEach(el => el.classList.add('vis'));
+  }, 200);
+}
+
+// ── SCROLL REVEAL ─────────────────────────────────────────
+function initReveal() {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+  }, { threshold: .08 });
+  document.querySelectorAll('.rev').forEach(el => io.observe(el));
+
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('shadow', scrollY > 10);
+  }, { passive: true });
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function showToast(msg, duration = 3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ── RENDER ALL ────────────────────────────────────────────
+function renderAll() {
+  if (!allScans || allScans.length === 0) {
+    renderEmptyState('no-scans');
+    return;
+  }
+
+  // Show content panels
+  document.getElementById('emptyAuth').style.display    = 'none';
+  document.getElementById('emptyNoScans').style.display = 'none';
+  document.getElementById('leftContent').style.display  = 'flex';
+  document.getElementById('emptyRight').style.display   = 'none';
+  document.getElementById('rightContent').style.display = 'flex';
+
+  const latest = allScans[allScans.length - 1];
+  const prev   = allScans.length > 1 ? allScans[allScans.length - 2] : null;
+
+  SCAN = latest;
+  const { o, ph, h, time } = latest;
+  const analysis = analyze(o, ph, h);
+
+  // Nav date
+  const d = new Date(time);
+  document.getElementById('navDate').textContent =
+    `Last scan ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+
+  // State hero
+  const parts = analysis.type.split(' ');
+  document.getElementById('stateType').innerHTML =
+    parts.length > 1
+      ? `${parts.slice(0,-1).join(' ')}<br><em>${parts[parts.length-1]}</em>`
+      : `<em>${analysis.type}</em>`;
+  document.getElementById('stateInsight').textContent = analysis.insight;
+
+  // Ring + days since scan
+  const daysSinceScan = renderRing(time);
+  const currentWeek = Math.min(4, Math.max(1, Math.ceil(daysSinceScan / 7)));
+
+  document.getElementById('stateMeta').innerHTML =
+    analysis.conds.map((c, i) => `<span class="meta-pill${i===0?' active':''}">${c}</span>`).join('') +
+    `<span class="meta-pill">Week ${currentWeek}</span>` +
+    `<span class="meta-pill">Barrier ${analysis.barrier}%</span>`;
+
+  // Weeks
+  activeWeek = currentWeek;
+  renderWeekPills(currentWeek);
+  renderWeekDetail(currentWeek, currentWeek);
+
+  // Graph from real scan history
+  setTimeout(() => drawGraph(allScans), 80);
+
+  // Insights: latest vs prev
+  renderInsights(latest, prev);
+
+  // Timeline from real scans
+  renderTimeline(allScans);
+
+  // Reveal animations
+  setTimeout(initReveal, 100);
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  initFirebase();
+  window.addEventListener('resize', () => { if (allScans.length > 0) drawGraph(allScans); });
+});
+</script>
+</body>
+</html>
